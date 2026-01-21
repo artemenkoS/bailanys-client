@@ -1,0 +1,180 @@
+import {
+  Modal,
+  Stack,
+  Avatar,
+  Text,
+  Group,
+  Button,
+  Card,
+  ActionIcon,
+  rem,
+  Box,
+} from "@mantine/core";
+import { IconPhone, IconPhoneOff, IconCheck, IconX } from "@tabler/icons-react";
+import type { SignalingMessage } from "../types/signaling";
+import type { CallStatus } from "../hooks/useCallManager";
+
+interface CallOverlayProps {
+  incomingCall: SignalingMessage | null;
+  activeCallTarget: string | null;
+  status: CallStatus;
+  onAccept: () => void;
+  onReject: () => void;
+  onHangup: () => void;
+}
+
+export const CallOverlay = ({
+  incomingCall,
+  activeCallTarget,
+  status,
+  onAccept,
+  onReject,
+  onHangup,
+}: CallOverlayProps) => {
+  const isEnded = status === "ended";
+  const isRejected = status === "rejected";
+  const isCalling = status === "calling";
+  const isFinished = isEnded || isRejected;
+
+  const getThemeColor = () => {
+    if (isFinished) return "red";
+    if (isCalling) return "indigo";
+    return "green";
+  };
+
+  const getStatusLabel = () => {
+    if (isEnded) return "Call Ended";
+    if (isRejected) return "Call Rejected";
+    if (isCalling) return "Calling...";
+    return "In Call";
+  };
+
+  return (
+    <>
+      <Modal
+        opened={!!incomingCall && status === "idle"}
+        onClose={onReject}
+        title="Incoming Audio Call"
+        centered
+        withCloseButton={false}
+        closeOnClickOutside={false}
+        overlayProps={{ backgroundOpacity: 0.5, blur: 3 }}
+      >
+        <Stack align="center" py="xl">
+          <Box
+            style={{
+              animation: "pulse 1.5s infinite ease-in-out",
+              borderRadius: "50%",
+            }}
+          >
+            <Avatar size="xl" radius="xl" color="indigo" variant="light">
+              <IconPhone size={40} />
+            </Avatar>
+          </Box>
+          <Text fw={700} size="lg" ta="center">
+            {incomingCall?.from?.slice(0, 8)} is calling...
+          </Text>
+          <Group mt="lg" grow style={{ width: "100%" }}>
+            <Button
+              color="green"
+              size="md"
+              leftSection={<IconPhone size={20} />}
+              onClick={onAccept}
+              radius="md"
+            >
+              Accept
+            </Button>
+            <Button
+              color="red"
+              variant="light"
+              size="md"
+              leftSection={<IconX size={20} />}
+              onClick={onReject}
+              radius="md"
+            >
+              Reject
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {activeCallTarget && (
+        <Card
+          withBorder
+          shadow="xl"
+          p="sm"
+          style={{
+            position: "fixed",
+            bottom: rem(20),
+            right: rem(20),
+            left: rem(20),
+            maxWidth: rem(340),
+            marginLeft: "auto",
+            zIndex: 1000,
+            transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+            transform: isFinished ? "scale(1.02)" : "scale(1)",
+            borderLeft: `${rem(5)} solid var(--mantine-color-${getThemeColor()}-6)`,
+            backgroundColor: isFinished
+              ? "var(--mantine-color-red-0)"
+              : "var(--mantine-color-white)",
+          }}
+        >
+          <Group justify="space-between" wrap="nowrap">
+            <Group gap="sm" wrap="nowrap">
+              <Avatar
+                color={getThemeColor()}
+                radius="xl"
+                variant={isFinished ? "filled" : "light"}
+              >
+                {isFinished ? <IconX size={20} /> : <IconPhone size={20} />}
+              </Avatar>
+              <div style={{ overflow: "hidden" }}>
+                <Text
+                  size="xs"
+                  fw={700}
+                  c={getThemeColor()}
+                  tt="uppercase"
+                  style={{ letterSpacing: rem(0.5) }}
+                >
+                  {getStatusLabel()}
+                </Text>
+                <Text size="sm" fw={600} truncate>
+                  User {activeCallTarget.slice(0, 12)}
+                </Text>
+              </div>
+            </Group>
+
+            {!isFinished && (
+              <ActionIcon
+                color="red"
+                size="xl"
+                radius="md"
+                variant="filled"
+                onClick={onHangup}
+                style={{ transition: "transform 0.2s ease" }}
+              >
+                <IconPhoneOff size={22} />
+              </ActionIcon>
+            )}
+
+            {isFinished && (
+              <IconCheck
+                size={24}
+                color="var(--mantine-color-red-6)"
+                style={{ opacity: 0.7 }}
+              />
+            )}
+          </Group>
+        </Card>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(76, 110, 245, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(76, 110, 245, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(76, 110, 245, 0); }
+        }
+      `}</style>
+    </>
+  );
+};
