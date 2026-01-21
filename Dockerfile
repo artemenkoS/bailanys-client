@@ -1,10 +1,9 @@
 FROM oven/bun:latest AS build-stage
 WORKDIR /app
 
-RUN bun config set registry https://registry.npmjs.org/
 
 COPY package.json bun.lockb* yarn.lock* ./
-RUN bun install --frozen-lockfile
+RUN bun install 
 
 COPY . .
 RUN bun run build
