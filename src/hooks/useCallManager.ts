@@ -18,6 +18,11 @@ export const useCallManager = () => {
   const [status, setStatus] = useState<CallStatus>("idle");
 
   const cleanupTimerRef = useRef<number | null>(null);
+  const ringIntervalRef = useRef<number | null>(null);
+  const ringTimeoutRef = useRef<number | null>(null);
+  const ringContextRef = useRef<AudioContext | null>(null);
+  const ringOscillatorRef = useRef<OscillatorNode | null>(null);
+  const ringGainRef = useRef<GainNode | null>(null);
 
   const { sendMessage, socket } = useSocket();
 
@@ -39,11 +44,70 @@ export const useCallManager = () => {
     }
   }, []);
 
+  const stopRingback = useCallback(() => {
+    if (ringIntervalRef.current) {
+      window.clearInterval(ringIntervalRef.current);
+      ringIntervalRef.current = null;
+    }
+    if (ringTimeoutRef.current) {
+      window.clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
+    if (ringGainRef.current && ringContextRef.current) {
+      ringGainRef.current.gain.setValueAtTime(
+        0,
+        ringContextRef.current.currentTime,
+      );
+    }
+    ringOscillatorRef.current?.stop();
+    ringOscillatorRef.current?.disconnect();
+    ringGainRef.current?.disconnect();
+    ringOscillatorRef.current = null;
+    ringGainRef.current = null;
+  }, []);
+
+  const startRingback = useCallback(async () => {
+    if (ringIntervalRef.current) return;
+
+    const ctx = ringContextRef.current || new AudioContext();
+    ringContextRef.current = ctx;
+
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+      } catch {
+        // ignore
+      }
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 440;
+    gain.gain.value = 0;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+
+    ringOscillatorRef.current = osc;
+    ringGainRef.current = gain;
+
+    const ringOnce = () => {
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      ringTimeoutRef.current = window.setTimeout(() => {
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+      }, 1000);
+    };
+
+    ringOnce();
+    ringIntervalRef.current = window.setInterval(ringOnce, 3000);
+  }, []);
+
   const stopCall = useCallback(
     (reason: "ended" | "rejected" = "ended") => {
       const targetId = activeCallTarget || incomingCall?.from;
       if (targetId) sendMessage({ type: "hangup", to: targetId });
 
+      stopRingback();
       cleanup();
       setStatus(reason);
 
@@ -52,7 +116,7 @@ export const useCallManager = () => {
         clearCallUI();
       }, 250);
     },
-    [activeCallTarget, incomingCall, sendMessage, cleanup, clearCallUI],
+    [activeCallTarget, incomingCall, sendMessage, cleanup, clearCallUI, stopRingback],
   );
 
   const startCall = useCallback(
@@ -60,13 +124,14 @@ export const useCallManager = () => {
       setStatus("calling");
       setActiveCallTarget(targetId);
       try {
+        await startRingback();
         await startAudioCall(targetId);
       } catch (e) {
         console.error("Start call error:", e);
         stopCall("ended");
       }
     },
-    [startAudioCall, stopCall],
+    [startAudioCall, stopCall, startRingback],
   );
 
   const acceptCall = useCallback(async () => {
@@ -98,6 +163,7 @@ export const useCallManager = () => {
 
         case "answer":
           if (msg.answer) {
+            stopRingback();
             await handleRemoteAnswer(msg.answer);
             setStatus("connected");
           }
@@ -116,6 +182,7 @@ export const useCallManager = () => {
           break;
 
         case "hangup":
+          stopRingback();
           cleanup();
           setStatus("ended");
           if (cleanupTimerRef.current)
@@ -130,6 +197,7 @@ export const useCallManager = () => {
     socket.addEventListener("message", handleMessage);
     return () => {
       socket.removeEventListener("message", handleMessage);
+      stopRingback();
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
     };
   }, [
@@ -138,7 +206,12 @@ export const useCallManager = () => {
     handleRemoteIceCandidate,
     cleanup,
     clearCallUI,
+    stopRingback,
   ]);
+
+  useEffect(() => {
+    if (status !== "calling") stopRingback();
+  }, [status, stopRingback]);
 
   return {
     incomingCall,
