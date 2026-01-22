@@ -4,7 +4,7 @@ import { useAuthStore } from "../stores/authStore";
 import type { RegisterData, LoginData } from "../types/auth";
 import { notifications } from "@mantine/notifications";
 
-export function useAuth() {
+export const useAuth = () => {
   const {
     user,
     session,
@@ -82,4 +82,4 @@ export function useAuth() {
     isRegistering: registerMutation.isPending,
     isLoggingIn: loginMutation.isPending,
   };
-}
+};

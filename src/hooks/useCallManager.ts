@@ -21,7 +21,13 @@ export const useCallManager = () => {
 
   const { sendMessage, socket } = useSocket();
 
-  const { initPeerConnection, pc, cleanup } = useWebRTC(sendMessage);
+  const {
+    startAudioCall,
+    handleRemoteOffer,
+    handleRemoteAnswer,
+    handleRemoteIceCandidate,
+    cleanup,
+  } = useWebRTC(sendMessage);
 
   const clearCallUI = useCallback(() => {
     setActiveCallTarget(null);
@@ -36,9 +42,7 @@ export const useCallManager = () => {
   const stopCall = useCallback(
     (reason: "ended" | "rejected" = "ended") => {
       const targetId = activeCallTarget || incomingCall?.from;
-      if (targetId) {
-        sendMessage({ type: "hangup", to: targetId });
-      }
+      if (targetId) sendMessage({ type: "hangup", to: targetId });
 
       cleanup();
       setStatus(reason);
@@ -46,57 +50,40 @@ export const useCallManager = () => {
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = window.setTimeout(() => {
         clearCallUI();
-      }, 2500);
+      }, 250);
     },
     [activeCallTarget, incomingCall, sendMessage, cleanup, clearCallUI],
   );
 
-  const startCall = async (targetId: string) => {
-    setStatus("calling");
-    setActiveCallTarget(targetId);
+  const startCall = useCallback(
+    async (targetId: string) => {
+      setStatus("calling");
+      setActiveCallTarget(targetId);
+      try {
+        await startAudioCall(targetId);
+      } catch (e) {
+        console.error("Start call error:", e);
+        stopCall("ended");
+      }
+    },
+    [startAudioCall, stopCall],
+  );
 
-    const peer = initPeerConnection(targetId);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-      sendMessage({ type: "offer", to: targetId, offer });
-    } catch (error) {
-      console.error("Start call error:", error);
-      stopCall("ended");
-    }
-  };
-
-  const acceptCall = async () => {
-    if (!incomingCall?.from || !incomingCall.offer || !pc.current) return;
+  const acceptCall = useCallback(async () => {
+    if (!incomingCall?.from || !incomingCall.offer) return;
 
     const targetId = incomingCall.from;
-    const peer = pc.current;
-
     setActiveCallTarget(targetId);
     setStatus("connected");
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-
-      await peer.setRemoteDescription(
-        new RTCSessionDescription(incomingCall.offer),
-      );
-
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-
-      sendMessage({ type: "answer", to: targetId, answer });
+      await handleRemoteOffer(targetId, incomingCall.offer);
       setIncomingCall(null);
-    } catch (error) {
-      console.error("Accept call error:", error);
+    } catch (e) {
+      console.error("Accept call error:", e);
       stopCall("ended");
     }
-  };
+  }, [incomingCall, handleRemoteOffer, stopCall]);
 
   useEffect(() => {
     if (!socket) return;
@@ -106,28 +93,22 @@ export const useCallManager = () => {
 
       switch (msg.type) {
         case "offer":
-          if (msg.from) {
-            initPeerConnection(msg.from);
-          }
           setIncomingCall(msg);
           break;
 
         case "answer":
-          if (pc.current && msg.answer) {
-            await pc.current.setRemoteDescription(
-              new RTCSessionDescription(msg.answer),
-            );
+          if (msg.answer) {
+            await handleRemoteAnswer(msg.answer);
             setStatus("connected");
           }
           break;
 
         case "ice-candidate":
-          if (msg.candidate && pc.current) {
+          if (msg.candidate) {
             try {
-              await pc.current.addIceCandidate(
-                new RTCIceCandidate(msg.candidate),
+              await handleRemoteIceCandidate(
+                msg.candidate as RTCIceCandidateInit,
               );
-              console.log("Remote ICE candidate added successfully");
             } catch (e) {
               console.error("Error adding ice candidate:", e);
             }
@@ -151,7 +132,13 @@ export const useCallManager = () => {
       socket.removeEventListener("message", handleMessage);
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
     };
-  }, [socket, pc, initPeerConnection, cleanup, clearCallUI]);
+  }, [
+    socket,
+    handleRemoteAnswer,
+    handleRemoteIceCandidate,
+    cleanup,
+    clearCallUI,
+  ]);
 
   return {
     incomingCall,
