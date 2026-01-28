@@ -60,6 +60,12 @@ export const useSocket = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === "presence-check") {
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ type: "presence-pong" }));
+          }
+          return;
+        }
         if (
           data.type === "user-connected" ||
           data.type === "user-disconnected"
