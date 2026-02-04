@@ -11,17 +11,20 @@ import {
   Box,
 } from "@mantine/core";
 import { IconPhone, IconPhoneOff, IconCheck, IconX } from "@tabler/icons-react";
-import type { SignalingMessage } from "../types/signaling";
+import type { SignalingMessage } from "../../../types/signaling";
 import type { CallStatus } from "../hooks/useCallManager";
+import { MuteMicButton } from "./MuteMicButton";
 
 interface CallOverlayProps {
   incomingCall: SignalingMessage | null;
   activeCallTarget: string | null;
   status: CallStatus;
   durationSeconds: number;
+  isMicMuted: boolean;
   onAccept: () => void;
   onReject: () => void;
   onHangup: () => void;
+  onToggleMute: () => void;
 }
 
 export const CallOverlay = ({
@@ -29,9 +32,11 @@ export const CallOverlay = ({
   activeCallTarget,
   status,
   durationSeconds,
+  isMicMuted,
   onAccept,
   onReject,
   onHangup,
+  onToggleMute,
 }: CallOverlayProps) => {
   const isEnded = status === "ended";
   const isRejected = status === "rejected";
@@ -162,16 +167,19 @@ export const CallOverlay = ({
             </Group>
 
             {!isFinished && (
-              <ActionIcon
-                color="red"
-                size="xl"
-                radius="md"
-                variant="filled"
-                onClick={onHangup}
-                style={{ transition: "transform 0.2s ease" }}
-              >
-                <IconPhoneOff size={22} />
-              </ActionIcon>
+              <Group gap="xs" wrap="nowrap">
+                <MuteMicButton isMuted={isMicMuted} onToggle={onToggleMute} />
+                <ActionIcon
+                  color="red"
+                  size="xl"
+                  radius="md"
+                  variant="filled"
+                  onClick={onHangup}
+                  style={{ transition: "transform 0.2s ease" }}
+                >
+                  <IconPhoneOff size={22} />
+                </ActionIcon>
+              </Group>
             )}
 
             {isFinished && (

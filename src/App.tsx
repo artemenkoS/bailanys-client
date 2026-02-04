@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { LoginForm } from "./components/LoginForm";
-import { RegisterForm } from "./components/RegisterForm";
+import { LoginForm } from "./features/auth/components/LoginForm";
+import { RegisterForm } from "./features/auth/components/RegisterForm";
 import { useAuthStore } from "./stores/authStore";
-import { Dashboard } from "./components/Dashboard";
+import { Dashboard } from "./features/dashboard/components/Dashboard";
 
 const queryClient = new QueryClient();
 

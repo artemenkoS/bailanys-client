@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "../stores/authStore";
-import type { SignalingMessage } from "../types/signaling";
+import { useAuthStore } from "../../../stores/authStore";
+import type { SignalingMessage } from "../../../types/signaling";
 
 export const useSocket = () => {
   const { session } = useAuthStore();

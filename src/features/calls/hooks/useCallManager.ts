@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "./useSocket";
 import { useWebRTC } from "./useWebRTC";
-import { apiService } from "../services/api.service";
-import { useAuthStore } from "../stores/authStore";
+import { apiService } from "../../../services/api.service";
+import { useAuthStore } from "../../../stores/authStore";
 import type {
   CallDirection,
   CallHistoryStatus,
   CallType,
-} from "../types/callHistory";
-import type { HangupReason, SignalingMessage } from "../types/signaling";
+} from "../../../types/callHistory";
+import type { HangupReason, SignalingMessage } from "../../../types/signaling";
 
 export type CallStatus =
   | "idle"
@@ -74,6 +74,8 @@ export const useCallManager = () => {
     handleRemoteAnswer,
     handleRemoteIceCandidate,
     cleanup,
+    isMicMuted,
+    toggleMicMute,
   } = useWebRTC(sendMessage);
 
   const getConnectedDuration = useCallback(() => {
@@ -422,5 +424,7 @@ export const useCallManager = () => {
     setIncomingCall,
     cleanup,
     callDurationSeconds,
+    isMicMuted,
+    toggleMicMute,
   };
 };

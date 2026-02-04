@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiService } from "../services/api.service";
-import { useAuthStore } from "../stores/authStore";
-import type { RegisterData, LoginData } from "../types/auth";
+import { apiService } from "../../../services/api.service";
+import { useAuthStore } from "../../../stores/authStore";
+import type { RegisterData, LoginData } from "../../../types/auth";
 import { notifications } from "@mantine/notifications";
 
 export const useAuth = () => {

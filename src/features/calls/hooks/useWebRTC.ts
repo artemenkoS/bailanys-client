@@ -1,28 +1,30 @@
 import { useCallback, useRef, useState } from "react";
-import type { SignalingMessage } from "../types/signaling";
+import type { SignalingMessage } from "../../../types/signaling";
+
+const RTC_CONFIGURATION: RTCConfiguration = {
+  iceServers: [
+    {
+      urls: [
+        "turns:194.32.140.234.sslip.io:5349?transport=tcp",
+        "turn:194.32.140.234:3478?transport=udp",
+      ],
+      username: "bailanys",
+      credential: "Astana20206!",
+    },
+  ],
+  iceTransportPolicy: "relay",
+};
 
 export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
   const [isCalling, setIsCalling] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(false);
 
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
   const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
   const audioTransceiver = useRef<RTCRtpTransceiver | null>(null);
-
-  const configuration: RTCConfiguration = {
-    iceServers: [
-      {
-        urls: [
-          "turns:194.32.140.234.sslip.io:5349?transport=tcp",
-          "turn:194.32.140.234:3478?transport=udp",
-        ],
-        username: "bailanys",
-        credential: "Astana20206!",
-      },
-    ],
-    iceTransportPolicy: "relay",
-  };
+  const isMicMutedRef = useRef(false);
 
   const ensureRemoteAudio = useCallback(() => {
     if (!remoteAudio.current) {
@@ -62,18 +64,38 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
     });
   }, []);
 
+  const applyMuteState = useCallback(
+    (stream: MediaStream | null, muted: boolean) => {
+      if (!stream) return;
+      for (const track of stream.getAudioTracks()) {
+        track.enabled = !muted;
+      }
+    },
+    [],
+  );
+
+  const toggleMicMute = useCallback(() => {
+    const nextMuted = !isMicMutedRef.current;
+    isMicMutedRef.current = nextMuted;
+    setIsMicMuted(nextMuted);
+    applyMuteState(localStream.current, nextMuted);
+  }, [applyMuteState]);
+
   const cleanup = useCallback(() => {
     pc.current?.close();
     localStream.current?.getTracks().forEach((t) => t.stop());
     pc.current = null;
     localStream.current = null;
+    audioTransceiver.current = null;
     pendingCandidates.current = [];
     setIsCalling(false);
+    isMicMutedRef.current = false;
+    setIsMicMuted(false);
   }, []);
 
   const initPeerConnection = useCallback(
     (targetId: string, createLocalAudioTransceiver = false) => {
-      const peer = new RTCPeerConnection(configuration);
+      const peer = new RTCPeerConnection(RTC_CONFIGURATION);
       pc.current = peer;
 
       if (createLocalAudioTransceiver) {
@@ -129,6 +151,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
       const peer = initPeerConnection(targetId, true);
 
       localStream.current = await getMicStream();
+      applyMuteState(localStream.current, isMicMutedRef.current);
 
       await attachLocalAudio(peer, localStream.current);
 
@@ -150,6 +173,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
       getMicStream,
       applyLowLatencySender,
       attachLocalAudio,
+      applyMuteState,
     ],
   );
 
@@ -167,6 +191,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
       }
 
       localStream.current = await getMicStream();
+      applyMuteState(localStream.current, isMicMutedRef.current);
 
       await attachLocalAudio(peer, localStream.current);
 
@@ -192,6 +217,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
       getMicStream,
       applyLowLatencySender,
       attachLocalAudio,
+      applyMuteState,
     ],
   );
 
@@ -227,5 +253,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
     pc,
     localStream,
     isCalling,
+    isMicMuted,
+    toggleMicMute,
   };
 };

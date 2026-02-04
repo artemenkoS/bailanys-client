@@ -10,7 +10,7 @@ import {
   rem,
 } from "@mantine/core";
 import { IconVideo, IconPhone } from "@tabler/icons-react";
-import type { Profile } from "../types/auth";
+import type { Profile } from "../../../types/auth";
 
 interface ContactCardProps {
   user: Profile;

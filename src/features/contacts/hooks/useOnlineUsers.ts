@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiService } from "../services/api.service";
-import { useAuthStore } from "../stores/authStore";
+import { apiService } from "../../../services/api.service";
+import { useAuthStore } from "../../../stores/authStore";
 
 export const useOnlineUsers = () => {
   const { session } = useAuthStore();

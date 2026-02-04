@@ -2,16 +2,16 @@ import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
-import { useAuthStore } from "../stores/authStore";
-import { useOnlineUsers } from "../hooks/useOnlineUsers";
-import { useCallManager } from "../hooks/useCallManager";
-import { useCallHistory } from "../hooks/useCallHistory";
+import { useAuthStore } from "../../../stores/authStore";
+import { useOnlineUsers } from "../../contacts/hooks/useOnlineUsers";
+import { useCallManager } from "../../calls/hooks/useCallManager";
+import { useCallHistory } from "../../calls/hooks/useCallHistory";
 
-import { CallOverlay } from "./CallOverlay";
-import { DashboardNavbar } from "./DashboardNavbar";
-import { ContactList } from "./ContactList";
-import { CallHistory } from "./CallHistory";
-import { Header } from "./Header";
+import { CallOverlay } from "../../calls/components/CallOverlay";
+import { ContactList } from "../../contacts/components/ContactList";
+import { CallHistory } from "../../calls/components/CallHistory";
+import { Header } from "../../../components/Header";
+import { DashboardNavbar } from "../../../components/DashboardNavbar";
 
 export const Dashboard = () => {
   const { user, logout } = useAuthStore();
@@ -33,6 +33,8 @@ export const Dashboard = () => {
     cleanup,
     status,
     callDurationSeconds,
+    isMicMuted,
+    toggleMicMute,
   } = useCallManager();
 
   const handleLogout = () => {
@@ -55,6 +57,8 @@ export const Dashboard = () => {
         onHangup={() => stopCall("ended")}
         status={status}
         durationSeconds={callDurationSeconds}
+        isMicMuted={isMicMuted}
+        onToggleMute={toggleMicMute}
       />
 
       <Header

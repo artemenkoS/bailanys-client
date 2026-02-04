@@ -16,7 +16,10 @@ import {
   IconArrowUpRight,
   IconPhoneOff,
 } from "@tabler/icons-react";
-import type { CallHistoryItem, CallHistoryStatus } from "../types/callHistory";
+import type {
+  CallHistoryItem,
+  CallHistoryStatus,
+} from "../../../types/callHistory";
 
 interface CallHistoryProps {
   calls: CallHistoryItem[];

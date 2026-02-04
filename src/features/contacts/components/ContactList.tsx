@@ -10,7 +10,7 @@ import {
 } from "@mantine/core";
 import { IconUsers } from "@tabler/icons-react";
 import { ContactCard } from "./ContactCard";
-import type { Profile } from "../types/auth";
+import type { Profile } from "../../../types/auth";
 
 interface ContactListProps {
   users: Profile[] | null;
