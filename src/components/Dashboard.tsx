@@ -5,10 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useOnlineUsers } from "../hooks/useOnlineUsers";
 import { useCallManager } from "../hooks/useCallManager";
+import { useCallHistory } from "../hooks/useCallHistory";
 
 import { CallOverlay } from "./CallOverlay";
 import { DashboardNavbar } from "./DashboardNavbar";
 import { ContactList } from "./ContactList";
+import { CallHistory } from "./CallHistory";
 import { Header } from "./Header";
 
 export const Dashboard = () => {
@@ -16,6 +18,11 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const [opened, { toggle }] = useDisclosure();
   const { data, isLoading, isError } = useOnlineUsers();
+  const {
+    data: callHistoryData,
+    isLoading: isCallHistoryLoading,
+    isError: isCallHistoryError,
+  } = useCallHistory();
 
   const {
     incomingCall,
@@ -25,6 +32,7 @@ export const Dashboard = () => {
     stopCall,
     cleanup,
     status,
+    callDurationSeconds,
   } = useCallManager();
 
   const handleLogout = () => {
@@ -43,9 +51,10 @@ export const Dashboard = () => {
         incomingCall={incomingCall}
         activeCallTarget={activeCallTarget}
         onAccept={acceptCall}
-        onReject={stopCall}
-        onHangup={stopCall}
+        onReject={() => stopCall("rejected")}
+        onHangup={() => stopCall("ended")}
         status={status}
+        durationSeconds={callDurationSeconds}
       />
 
       <Header
@@ -62,6 +71,11 @@ export const Dashboard = () => {
           isLoading={isLoading}
           isError={isError}
           onStartCall={startCall}
+        />
+        <CallHistory
+          calls={callHistoryData?.calls || []}
+          isLoading={isCallHistoryLoading}
+          isError={isCallHistoryError}
         />
       </AppShell.Main>
     </AppShell>

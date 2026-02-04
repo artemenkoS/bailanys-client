@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "./useSocket";
 import { useWebRTC } from "./useWebRTC";
-import type { SignalingMessage } from "../types/signaling";
+import { apiService } from "../services/api.service";
+import { useAuthStore } from "../stores/authStore";
+import type {
+  CallDirection,
+  CallHistoryStatus,
+  CallType,
+} from "../types/callHistory";
+import type { HangupReason, SignalingMessage } from "../types/signaling";
 
 export type CallStatus =
   | "idle"
@@ -10,19 +18,53 @@ export type CallStatus =
   | "ended"
   | "rejected";
 
+type HangupActor = "local" | "remote";
+
+const resolveHistoryStatus = (
+  direction: CallDirection,
+  reason: HangupReason,
+  connected: boolean,
+  by: HangupActor,
+): CallHistoryStatus => {
+  if (connected) return "completed";
+
+  if (direction === "incoming") {
+    if (by === "local" && reason === "rejected") return "rejected";
+    return "missed";
+  }
+
+  if (reason === "rejected") return "rejected";
+  if (by === "local") return "failed";
+  return "missed";
+};
+
 export const useCallManager = () => {
   const [incomingCall, setIncomingCall] = useState<SignalingMessage | null>(
     null,
   );
   const [activeCallTarget, setActiveCallTarget] = useState<string | null>(null);
   const [status, setStatus] = useState<CallStatus>("idle");
+  const [callDurationSeconds, setCallDurationSeconds] = useState(0);
 
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((state) => state.session?.access_token);
   const cleanupTimerRef = useRef<number | null>(null);
   const ringIntervalRef = useRef<number | null>(null);
   const ringTimeoutRef = useRef<number | null>(null);
   const ringContextRef = useRef<AudioContext | null>(null);
   const ringOscillatorRef = useRef<OscillatorNode | null>(null);
   const ringGainRef = useRef<GainNode | null>(null);
+  const durationIntervalRef = useRef<number | null>(null);
+  const historyRefreshTimersRef = useRef<number[]>([]);
+
+  const incomingCallRef = useRef<SignalingMessage | null>(null);
+  const activeCallTargetRef = useRef<string | null>(null);
+
+  const callDirectionRef = useRef<CallDirection | null>(null);
+  const callStartedAtRef = useRef<number | null>(null);
+  const callConnectedAtRef = useRef<number | null>(null);
+  const callTypeRef = useRef<CallType>("audio");
+  const loggedRef = useRef(false);
 
   const { sendMessage, socket } = useSocket();
 
@@ -34,15 +76,122 @@ export const useCallManager = () => {
     cleanup,
   } = useWebRTC(sendMessage);
 
+  const getConnectedDuration = useCallback(() => {
+    if (!callConnectedAtRef.current) return 0;
+    return Math.max(
+      0,
+      Math.floor((Date.now() - callConnectedAtRef.current) / 1000),
+    );
+  }, []);
+
+  const stopDurationTimer = useCallback(() => {
+    if (durationIntervalRef.current) {
+      window.clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+  }, []);
+
+  const startDurationTimer = useCallback(() => {
+    if (!callConnectedAtRef.current) {
+      callConnectedAtRef.current = Date.now();
+    }
+    stopDurationTimer();
+    setCallDurationSeconds(0);
+    durationIntervalRef.current = window.setInterval(() => {
+      setCallDurationSeconds(getConnectedDuration());
+    }, 1000);
+  }, [getConnectedDuration, stopDurationTimer]);
+
+  const resetCallTracking = useCallback(() => {
+    stopDurationTimer();
+    callDirectionRef.current = null;
+    callStartedAtRef.current = null;
+    callConnectedAtRef.current = null;
+    callTypeRef.current = "audio";
+    loggedRef.current = false;
+    setCallDurationSeconds(0);
+  }, [stopDurationTimer]);
+
+  const clearHistoryRefreshTimers = useCallback(() => {
+    for (const timerId of historyRefreshTimersRef.current) {
+      window.clearTimeout(timerId);
+    }
+    historyRefreshTimersRef.current = [];
+  }, []);
+
+  const scheduleCallHistoryRefresh = useCallback(() => {
+    clearHistoryRefreshTimers();
+    for (const delay of [0, 800, 1800]) {
+      const timerId = window.setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["call-history"] });
+      }, delay);
+      historyRefreshTimersRef.current.push(timerId);
+    }
+  }, [clearHistoryRefreshTimers, queryClient]);
+
+  const persistCallHistory = useCallback(
+    (reason: HangupReason, by: HangupActor) => {
+      if (loggedRef.current) return;
+
+      const peerId = activeCallTargetRef.current || incomingCallRef.current?.from;
+      const direction = callDirectionRef.current;
+      if (!peerId || !direction) return;
+
+      // call_history is a shared record for caller/receiver,
+      // so we persist only from the outgoing side to avoid duplicates.
+      if (direction !== "outgoing") {
+        loggedRef.current = true;
+        scheduleCallHistoryRefresh();
+        return;
+      }
+
+      const endedAtMs = Date.now();
+      const durationSeconds = getConnectedDuration();
+      const startedAtIso = new Date(
+        callStartedAtRef.current ?? endedAtMs,
+      ).toISOString();
+      const endedAtIso = new Date(endedAtMs).toISOString();
+      const historyStatus = resolveHistoryStatus(
+        direction,
+        reason,
+        !!callConnectedAtRef.current,
+        by,
+      );
+
+      setCallDurationSeconds(durationSeconds);
+      loggedRef.current = true;
+
+      if (!accessToken) return;
+
+      void apiService
+        .createCallHistory(accessToken, {
+          peerId,
+          direction,
+          status: historyStatus,
+          durationSeconds,
+          callType: callTypeRef.current,
+          startedAt: startedAtIso,
+          endedAt: endedAtIso,
+        })
+        .then(() => scheduleCallHistoryRefresh())
+        .catch((error) => {
+          loggedRef.current = false;
+          console.error("Failed to save call history:", error);
+        });
+    },
+    [accessToken, getConnectedDuration, scheduleCallHistoryRefresh],
+  );
+
   const clearCallUI = useCallback(() => {
     setActiveCallTarget(null);
     setIncomingCall(null);
     setStatus("idle");
+    resetCallTracking();
     if (cleanupTimerRef.current) {
       window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
     }
-  }, []);
+  }, [resetCallTracking]);
 
   const stopRingback = useCallback(() => {
     if (ringIntervalRef.current) {
@@ -103,12 +252,14 @@ export const useCallManager = () => {
   }, []);
 
   const stopCall = useCallback(
-    (reason: "ended" | "rejected" = "ended") => {
-      const targetId = activeCallTarget || incomingCall?.from;
-      if (targetId) sendMessage({ type: "hangup", to: targetId });
+    (reason: HangupReason = "ended") => {
+      const targetId = activeCallTargetRef.current || incomingCallRef.current?.from;
+      if (targetId) sendMessage({ type: "hangup", to: targetId, reason });
 
       stopRingback();
+      stopDurationTimer();
       cleanup();
+      persistCallHistory(reason, "local");
       setStatus(reason);
 
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
@@ -116,11 +267,25 @@ export const useCallManager = () => {
         clearCallUI();
       }, 250);
     },
-    [activeCallTarget, incomingCall, sendMessage, cleanup, clearCallUI, stopRingback],
+    [
+      sendMessage,
+      cleanup,
+      clearCallUI,
+      stopRingback,
+      persistCallHistory,
+      stopDurationTimer,
+    ],
   );
 
   const startCall = useCallback(
-    async (targetId: string) => {
+    async (targetId: string, callType: CallType = "audio") => {
+      callDirectionRef.current = "outgoing";
+      callStartedAtRef.current = Date.now();
+      callConnectedAtRef.current = null;
+      callTypeRef.current = callType;
+      loggedRef.current = false;
+      setCallDurationSeconds(0);
+      setIncomingCall(null);
       setStatus("calling");
       setActiveCallTarget(targetId);
       try {
@@ -135,20 +300,35 @@ export const useCallManager = () => {
   );
 
   const acceptCall = useCallback(async () => {
-    if (!incomingCall?.from || !incomingCall.offer) return;
+    const pendingCall = incomingCallRef.current;
+    if (!pendingCall?.from || !pendingCall.offer) return;
 
-    const targetId = incomingCall.from;
+    const targetId = pendingCall.from;
+    callDirectionRef.current = "incoming";
+    callStartedAtRef.current = callStartedAtRef.current ?? Date.now();
+    callConnectedAtRef.current = Date.now();
+    callTypeRef.current = pendingCall.callType || "audio";
+    loggedRef.current = false;
     setActiveCallTarget(targetId);
-    setStatus("connected");
 
     try {
-      await handleRemoteOffer(targetId, incomingCall.offer);
+      await handleRemoteOffer(targetId, pendingCall.offer);
       setIncomingCall(null);
+      setStatus("connected");
+      startDurationTimer();
     } catch (e) {
       console.error("Accept call error:", e);
       stopCall("ended");
     }
-  }, [incomingCall, handleRemoteOffer, stopCall]);
+  }, [handleRemoteOffer, startDurationTimer, stopCall]);
+
+  useEffect(() => {
+    incomingCallRef.current = incomingCall;
+  }, [incomingCall]);
+
+  useEffect(() => {
+    activeCallTargetRef.current = activeCallTarget;
+  }, [activeCallTarget]);
 
   useEffect(() => {
     if (!socket) return;
@@ -159,13 +339,21 @@ export const useCallManager = () => {
       switch (msg.type) {
         case "offer":
           setIncomingCall(msg);
+          callDirectionRef.current = "incoming";
+          callStartedAtRef.current = Date.now();
+          callConnectedAtRef.current = null;
+          callTypeRef.current = msg.callType || "audio";
+          loggedRef.current = false;
+          setCallDurationSeconds(0);
           break;
 
         case "answer":
           if (msg.answer) {
             stopRingback();
             await handleRemoteAnswer(msg.answer);
+            callConnectedAtRef.current = Date.now();
             setStatus("connected");
+            startDurationTimer();
           }
           break;
 
@@ -181,16 +369,21 @@ export const useCallManager = () => {
           }
           break;
 
-        case "hangup":
+        case "hangup": {
+          stopDurationTimer();
           stopRingback();
           cleanup();
-          setStatus("ended");
+          const remoteReason: HangupReason =
+            msg.reason === "rejected" ? "rejected" : "ended";
+          persistCallHistory(remoteReason, "remote");
+          setStatus(remoteReason);
           if (cleanupTimerRef.current)
             window.clearTimeout(cleanupTimerRef.current);
           cleanupTimerRef.current = window.setTimeout(() => {
             clearCallUI();
           }, 2500);
           break;
+        }
       }
     };
 
@@ -198,6 +391,8 @@ export const useCallManager = () => {
     return () => {
       socket.removeEventListener("message", handleMessage);
       stopRingback();
+      stopDurationTimer();
+      clearHistoryRefreshTimers();
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
     };
   }, [
@@ -207,6 +402,10 @@ export const useCallManager = () => {
     cleanup,
     clearCallUI,
     stopRingback,
+    persistCallHistory,
+    startDurationTimer,
+    stopDurationTimer,
+    clearHistoryRefreshTimers,
   ]);
 
   useEffect(() => {
@@ -222,5 +421,6 @@ export const useCallManager = () => {
     stopCall,
     setIncomingCall,
     cleanup,
+    callDurationSeconds,
   };
 };

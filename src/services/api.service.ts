@@ -4,6 +4,10 @@ import type {
   LoginData,
   Profile,
 } from "../types/auth";
+import type {
+  CallHistoryItem,
+  CreateCallHistoryRequest,
+} from "../types/callHistory";
 import { useAuthStore } from "../stores/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -58,6 +62,27 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async getCallHistory(token: string): Promise<{ calls: CallHistoryItem[] }> {
+    return this.fetch<{ calls: CallHistoryItem[] }>("/api/call-history", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async createCallHistory(
+    token: string,
+    data: CreateCallHistoryRequest,
+  ): Promise<{ ok: boolean }> {
+    return this.fetch<{ ok: boolean }>("/api/call-history", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
   }
 }

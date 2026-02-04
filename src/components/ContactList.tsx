@@ -16,7 +16,7 @@ interface ContactListProps {
   users: Profile[] | null;
   isLoading: boolean;
   isError: boolean;
-  onStartCall: (targetId: string) => void;
+  onStartCall: (targetId: string, type: "audio" | "video") => void;
 }
 
 export const ContactList = ({

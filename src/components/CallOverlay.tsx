@@ -18,6 +18,7 @@ interface CallOverlayProps {
   incomingCall: SignalingMessage | null;
   activeCallTarget: string | null;
   status: CallStatus;
+  durationSeconds: number;
   onAccept: () => void;
   onReject: () => void;
   onHangup: () => void;
@@ -27,6 +28,7 @@ export const CallOverlay = ({
   incomingCall,
   activeCallTarget,
   status,
+  durationSeconds,
   onAccept,
   onReject,
   onHangup,
@@ -35,6 +37,16 @@ export const CallOverlay = ({
   const isRejected = status === "rejected";
   const isCalling = status === "calling";
   const isFinished = isEnded || isRejected;
+  const showDuration = status === "connected" || (isFinished && durationSeconds > 0);
+
+  const formatDuration = (seconds: number) => {
+    const safe = Math.max(0, Math.floor(seconds));
+    const mm = Math.floor(safe / 60)
+      .toString()
+      .padStart(2, "0");
+    const ss = (safe % 60).toString().padStart(2, "0");
+    return `${mm}:${ss}`;
+  };
 
   const getThemeColor = () => {
     if (isFinished) return "red";
@@ -141,6 +153,11 @@ export const CallOverlay = ({
                 <Text size="sm" fw={600} truncate>
                   User {activeCallTarget.slice(0, 12)}
                 </Text>
+                {showDuration && (
+                  <Text size="xs" c="dimmed" mt={2}>
+                    {formatDuration(durationSeconds)}
+                  </Text>
+                )}
               </div>
             </Group>
 
