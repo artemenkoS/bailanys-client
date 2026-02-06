@@ -2,7 +2,7 @@ import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
-import { useAuthStore } from "../../../stores/authStore";
+import { useAuth } from "../../auth/hooks/useAuth";
 import { useOnlineUsers } from "../../contacts/hooks/useOnlineUsers";
 import { useCallManager } from "../../calls/hooks/useCallManager";
 import { useCallHistory } from "../../calls/hooks/useCallHistory";
@@ -12,11 +12,14 @@ import { ContactList } from "../../contacts/components/ContactList";
 import { CallHistory } from "../../calls/components/CallHistory";
 import { Header } from "../../../components/Header";
 import { DashboardNavbar } from "../../../components/DashboardNavbar";
+import { ProfileEditModal } from "../../profile/components/ProfileEditModal";
 
 export const Dashboard = () => {
-  const { user, logout } = useAuthStore();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [opened, { toggle }] = useDisclosure();
+  const [profileOpened, { open: openProfile, close: closeProfile }] =
+    useDisclosure(false);
   const { data, isLoading, isError } = useOnlineUsers();
   const {
     data: callHistoryData,
@@ -67,7 +70,7 @@ export const Dashboard = () => {
         onlineCount={data?.users.length || 0}
       />
 
-      <DashboardNavbar user={user} onLogout={handleLogout} />
+      <DashboardNavbar onLogout={handleLogout} onEditProfile={openProfile} />
 
       <AppShell.Main>
         <ContactList
@@ -82,6 +85,8 @@ export const Dashboard = () => {
           isError={isCallHistoryError}
         />
       </AppShell.Main>
+
+      <ProfileEditModal opened={profileOpened} onClose={closeProfile} />
     </AppShell>
   );
 };

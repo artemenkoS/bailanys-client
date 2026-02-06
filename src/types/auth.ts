@@ -39,3 +39,10 @@ export interface Profile {
   status: "online" | "offline" | "busy" | "in-call";
   last_seen: string;
 }
+
+export interface UpdateProfileData {
+  username?: string;
+  displayName?: string | null;
+  avatarFile?: File | null;
+  removeAvatar?: boolean;
+}

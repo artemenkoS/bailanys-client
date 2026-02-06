@@ -9,6 +9,7 @@ interface AuthState {
   setAuth: (user: User, session: Session) => void;
   logout: () => void;
   updateToken: (token: string) => void;
+  updateUserMetadata: (metadata: Partial<User["user_metadata"]>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -38,6 +39,20 @@ export const useAuthStore = create<AuthState>()(
             ? { ...state.session, access_token: token }
             : null,
         })),
+
+      updateUserMetadata: (metadata) =>
+        set((state) => {
+          if (!state.user) return {};
+          return {
+            user: {
+              ...state.user,
+              user_metadata: {
+                ...state.user.user_metadata,
+                ...metadata,
+              },
+            },
+          };
+        }),
     }),
     {
       name: "auth-storage",

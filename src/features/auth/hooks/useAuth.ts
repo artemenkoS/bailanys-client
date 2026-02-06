@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiService } from "../../../services/api.service";
 import { useAuthStore } from "../../../stores/authStore";
 import type { RegisterData, LoginData } from "../../../types/auth";
@@ -55,12 +55,6 @@ export const useAuth = () => {
     },
   });
 
-  const { data: profileData, refetch: refetchProfile } = useQuery({
-    queryKey: ["profile", session?.access_token],
-    queryFn: () => apiService.getProfile(session!.access_token),
-    enabled: !!session?.access_token && isAuthenticated,
-  });
-
   const logout = () => {
     logoutStore();
     notifications.show({
@@ -74,11 +68,9 @@ export const useAuth = () => {
     user,
     session,
     isAuthenticated,
-    profile: profileData?.profile,
     register: registerMutation.mutate,
     login: loginMutation.mutate,
     logout,
-    refetchProfile,
     isRegistering: registerMutation.isPending,
     isLoggingIn: loginMutation.isPending,
   };

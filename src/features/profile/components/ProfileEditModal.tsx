@@ -1,0 +1,38 @@
+import { Modal } from "@mantine/core";
+import { useMemo } from "react";
+import { useProfile } from "../hooks/useProfile";
+import { ProfileEditForm } from "./ProfileEditForm";
+
+interface ProfileEditModalProps {
+  opened: boolean;
+  onClose: () => void;
+}
+
+export const ProfileEditModal = ({
+  opened,
+  onClose,
+}: ProfileEditModalProps) => {
+  const { profile } = useProfile();
+
+  const profileKey = useMemo(
+    () =>
+      [
+        profile?.id ?? "",
+        profile?.username ?? "",
+        profile?.display_name ?? "",
+        profile?.avatar_url ?? "",
+      ].join("|"),
+    [
+      profile?.id,
+      profile?.username,
+      profile?.display_name,
+      profile?.avatar_url,
+    ],
+  );
+
+  return (
+    <Modal opened={opened} onClose={onClose} title="Edit Profile" centered>
+      {opened && <ProfileEditForm key={profileKey} onClose={onClose} />}
+    </Modal>
+  );
+};

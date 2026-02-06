@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   LoginData,
   Profile,
+  UpdateProfileData,
 } from "../types/auth";
 import type {
   CallHistoryItem,
@@ -14,11 +15,14 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 class ApiService {
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const isFormData =
+      typeof FormData !== "undefined" && options?.body instanceof FormData;
+    const headers = new Headers(options?.headers);
+    if (!isFormData && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
     const response = await fetch(`${API_URL}${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
+      headers,
       ...options,
     });
 
@@ -54,6 +58,47 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async updateProfile(
+    token: string,
+    data: UpdateProfileData,
+  ): Promise<{ profile: Profile }> {
+    const hasAvatar = Boolean(data.avatarFile);
+    const hasRemoval = Boolean(data.removeAvatar);
+
+    if (!hasAvatar && !hasRemoval) {
+      return this.fetch<{ profile: Profile }>("/api/profile", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          username: data.username,
+          displayName: data.displayName,
+        }),
+      });
+    }
+
+    const formData = new FormData();
+    if (data.username) formData.append("username", data.username);
+    if (data.displayName !== undefined) {
+      formData.append("displayName", data.displayName ?? "");
+    }
+    if (data.avatarFile) {
+      formData.append("avatar", data.avatarFile);
+    }
+    if (data.removeAvatar) {
+      formData.append("removeAvatar", "true");
+    }
+
+    return this.fetch<{ profile: Profile }>("/api/profile", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
     });
   }
 
