@@ -19,6 +19,23 @@ interface ContactCardProps {
 
 export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
   const displayName = user.display_name || user.username;
+  const statusLabel =
+    user.status === "in-call"
+      ? "in call"
+      : user.status === "busy"
+        ? "busy"
+        : user.status === "offline"
+          ? "offline"
+          : "online";
+  const statusColor =
+    user.status === "in-call"
+      ? "red"
+      : user.status === "busy"
+        ? "yellow"
+        : user.status === "offline"
+          ? "gray"
+          : "green";
+  const canCall = user.status === "online";
 
   return (
     <Card
@@ -55,8 +72,8 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
           <Text size="xs" c="dimmed" mb={5}>
             @{user.username}
           </Text>
-          <Badge color="green" variant="light" size="xs">
-            online
+          <Badge color={statusColor} variant="light" size="xs">
+            {statusLabel}
           </Badge>
         </div>
       </Group>
@@ -74,13 +91,18 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
           Video Call
         </Button>
 
-        <Tooltip label="Audio Call" withArrow position="bottom">
+        <Tooltip
+          label={canCall ? "Audio Call" : "User is busy"}
+          withArrow
+          position="bottom"
+        >
           <ActionIcon
             variant="light"
             color="indigo"
             size={rem(42)}
             radius="md"
             onClick={() => onStartCall(user.id, "audio")}
+            disabled={!canCall}
           >
             <IconPhone size={20} />
           </ActionIcon>

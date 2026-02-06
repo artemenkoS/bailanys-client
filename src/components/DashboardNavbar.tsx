@@ -35,6 +35,21 @@ export const DashboardNavbar = ({
     profile?.username || (user?.user_metadata?.username as string) || "";
   const avatarUrl = profile?.avatar_url || undefined;
   const initialsSource = displayName || username || user?.email || "?";
+  const status = profile?.status ?? "online";
+  const statusLabels: Record<string, string> = {
+    "in-call": "in call",
+    busy: "busy",
+    offline: "offline",
+    online: "online",
+  };
+  const statusColors: Record<string, string> = {
+    "in-call": "red",
+    busy: "yellow",
+    offline: "gray",
+    online: "green",
+  };
+  const statusLabel = statusLabels[status] ?? "online";
+  const statusColor = statusColors[status] ?? "green";
 
   return (
     <AppShell.Navbar p="md">
@@ -51,8 +66,8 @@ export const DashboardNavbar = ({
               <Text size="sm" fw={600} truncate="end">
                 {displayName}
               </Text>
-              <Badge color="green" variant="dot" size="xs">
-                online
+              <Badge color={statusColor} variant="dot" size="xs">
+                {statusLabel}
               </Badge>
             </div>
             <ActionIcon

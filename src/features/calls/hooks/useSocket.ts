@@ -4,9 +4,10 @@ import { useAuthStore } from "../../../stores/authStore";
 import type { SignalingMessage } from "../../../types/signaling";
 
 export const useSocket = () => {
-  const { session } = useAuthStore();
+  const { session, user } = useAuthStore();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
+  const userId = user?.id;
 
   const [socketInstance, setSocketInstance] = useState<WebSocket | null>(null);
 
@@ -71,6 +72,14 @@ export const useSocket = () => {
           data.type === "user-disconnected"
         ) {
           queryClient.invalidateQueries({ queryKey: ["online-users"] });
+        }
+        if (data.type === "user-status") {
+          queryClient.invalidateQueries({ queryKey: ["online-users"] });
+          if (data.userId && data.userId === userId) {
+            queryClient.invalidateQueries({
+              queryKey: ["profile", accessToken],
+            });
+          }
         }
       } catch (err) {
         console.error("WS Message Error:", err);

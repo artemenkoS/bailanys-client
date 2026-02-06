@@ -65,6 +65,7 @@ export const useCallManager = () => {
   const callConnectedAtRef = useRef<number | null>(null);
   const callTypeRef = useRef<CallType>("audio");
   const loggedRef = useRef(false);
+  const statusRef = useRef<CallStatus>("idle");
 
   const { sendMessage, socket } = useSocket();
 
@@ -281,6 +282,10 @@ export const useCallManager = () => {
 
   const startCall = useCallback(
     async (targetId: string, callType: CallType = "audio") => {
+      if (statusRef.current !== "idle" || activeCallTargetRef.current) {
+        console.warn("Call already in progress");
+        return;
+      }
       callDirectionRef.current = "outgoing";
       callStartedAtRef.current = Date.now();
       callConnectedAtRef.current = null;
@@ -333,6 +338,10 @@ export const useCallManager = () => {
   }, [activeCallTarget]);
 
   useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
     if (!socket) return;
 
     const handleMessage = async (event: MessageEvent) => {
@@ -340,6 +349,17 @@ export const useCallManager = () => {
 
       switch (msg.type) {
         case "offer":
+          if (
+            statusRef.current !== "idle" ||
+            activeCallTargetRef.current ||
+            incomingCallRef.current
+          ) {
+            if (msg.from) {
+              sendMessage({ type: "hangup", to: msg.from, reason: "rejected" });
+            }
+            break;
+          }
+          incomingCallRef.current = msg;
           setIncomingCall(msg);
           callDirectionRef.current = "incoming";
           callStartedAtRef.current = Date.now();
@@ -399,6 +419,7 @@ export const useCallManager = () => {
     };
   }, [
     socket,
+    sendMessage,
     handleRemoteAnswer,
     handleRemoteIceCandidate,
     cleanup,
