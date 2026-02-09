@@ -2,6 +2,7 @@ import { Button, FileInput, PasswordInput, SegmentedControl, Stack, Text, TextIn
 import { IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import type { CreateRoomPayload } from '../../../types/rooms';
 
 interface RoomCreateSectionProps {

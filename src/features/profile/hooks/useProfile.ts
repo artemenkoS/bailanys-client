@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
 import type { UpdateProfileData } from '../../../types/auth';
-import { useTranslation } from 'react-i18next';
 
 export const useProfile = () => {
   const { t } = useTranslation();

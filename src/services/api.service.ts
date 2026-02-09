@@ -1,7 +1,7 @@
-import type { RegisterData, AuthResponse, LoginData, Profile, UpdateProfileData } from '../types/auth';
+import { useAuthStore } from '../stores/authStore';
+import type { AuthResponse, LoginData, Profile, RegisterData, UpdateProfileData } from '../types/auth';
 import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
 import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
-import { useAuthStore } from '../stores/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

@@ -1,8 +1,9 @@
-import { AppShell, Group, Burger, Title, rem, Text } from '@mantine/core';
+import { AppShell, Burger, Group, rem, Text,Title } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from './LanguageSwitcher';
+
 import { useOnlineUsers } from '../features/contacts/hooks/useOnlineUsers';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
   opened: boolean;

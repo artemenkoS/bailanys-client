@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { useAuthStore } from '../../../stores/authStore';
-import { useSocket } from './useSocket';
 import type {
   RoomAnswerMessage,
   RoomIceMessage,
@@ -10,6 +10,7 @@ import type {
   RoomUserLeftMessage,
   SocketMessage,
 } from '../../../types/signaling';
+import { useSocket } from './useSocket';
 
 const RTC_CONFIGURATION: RTCConfiguration = {
   iceServers: [

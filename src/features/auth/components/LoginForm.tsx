@@ -1,11 +1,11 @@
-import { Button, Flex, TextInput, Typography, Stack, Group } from '@mantine/core';
+import { Button, Flex, Group,Stack, TextInput, Typography } from '@mantine/core';
 import { useForm } from '@mantine/form';
-
-import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
+import { useAuth } from '../hooks/useAuth';
 
 export const LoginForm = () => {
   const { login, isLoggingIn, isAuthenticated } = useAuth();

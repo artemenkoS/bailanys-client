@@ -1,6 +1,7 @@
 import { Avatar, Badge, Button, Card, FileButton, Group, Loader, Stack, Text } from '@mantine/core';
 import { IconDoorEnter } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+
 import type { RoomOwnerSummary, RoomSummary } from '../../../types/rooms';
 
 interface RoomsListSectionProps<T extends RoomSummary> {

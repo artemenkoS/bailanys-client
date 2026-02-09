@@ -1,8 +1,9 @@
-import { Container, Stack, Title, SimpleGrid, Center, Loader, Text, rem } from '@mantine/core';
+import { Center, Container, Loader, rem,SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
-import { ContactCard } from './ContactCard';
 import { useTranslation } from 'react-i18next';
+
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
+import { ContactCard } from './ContactCard';
 
 interface ContactListProps {
   onStartCall: (targetId: string, type: 'audio' | 'video') => void;

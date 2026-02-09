@@ -1,9 +1,10 @@
+import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
-import type { RegisterData, LoginData } from '../../../types/auth';
-import { notifications } from '@mantine/notifications';
-import { useTranslation } from 'react-i18next';
+import type { LoginData,RegisterData } from '../../../types/auth';
 
 export const useAuth = () => {
   const { t } = useTranslation();

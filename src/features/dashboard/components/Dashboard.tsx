@@ -1,25 +1,24 @@
 import { AppShell } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
-import { useAuth } from '../../auth/hooks/useAuth';
-import { useCallManager } from '../../calls/hooks/useCallManager';
-import { useCallHistory } from '../../calls/hooks/useCallHistory';
-import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
-
-import { CallOverlay } from '../../calls/components/CallOverlay';
-import { ContactList } from '../../contacts/components/ContactList';
-import { CallHistory } from '../../calls/components/CallHistory';
-import { RoomPanel } from '../../calls/components/RoomPanel';
-import { Header } from '../../../components/Header';
 import { DashboardNavbar } from '../../../components/DashboardNavbar';
-import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
+import { Header } from '../../../components/Header';
 import { useAuthStore } from '../../../stores/authStore';
 import type { CreateRoomPayload } from '../../../types/rooms';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { CallHistory } from '../../calls/components/CallHistory';
+import { CallOverlay } from '../../calls/components/CallOverlay';
+import { RoomPanel } from '../../calls/components/RoomPanel';
+import { useCallHistory } from '../../calls/hooks/useCallHistory';
+import { useCallManager } from '../../calls/hooks/useCallManager';
+import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
+import { ContactList } from '../../contacts/components/ContactList';
+import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
 
 export const Dashboard = () => {
   const { logout } = useAuth();
@@ -90,6 +89,7 @@ export const Dashboard = () => {
       if (isInRoom) return null;
       const generated = uuidv4();
       const { avatarFile, ...roomPayload } = payload;
+      void avatarFile;
       createRoom(generated, roomPayload);
       return generated;
     },

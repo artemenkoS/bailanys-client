@@ -1,12 +1,13 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import type { UpdateProfileData } from '../../../types/auth';
 import { useAvatarState } from '../hooks/useAvatarState';
 import { useProfile } from '../hooks/useProfile';
 import { AvatarUploadField } from './AvatarUploadField';
 import { ProfilePreview } from './ProfilePreview';
-import { useTranslation } from 'react-i18next';
 
 interface ProfileEditFormProps {
   onClose: () => void;

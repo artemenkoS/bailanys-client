@@ -1,7 +1,8 @@
-import { Card, Group, Avatar, Text, Badge, Button, Tooltip, ActionIcon, rem } from '@mantine/core';
-import { IconVideo, IconPhone } from '@tabler/icons-react';
-import type { Profile } from '../../../types/auth';
+import { ActionIcon, Avatar, Badge, Button, Card, Group, rem,Text, Tooltip } from '@mantine/core';
+import { IconPhone,IconVideo } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+
+import type { Profile } from '../../../types/auth';
 
 interface ContactCardProps {
   user: Profile;

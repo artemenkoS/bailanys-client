@@ -1,7 +1,8 @@
-import { Badge, Card, Center, Container, Group, Loader, Stack, Text, ThemeIcon, Title, rem } from '@mantine/core';
+import { Badge, Card, Center, Container, Group, Loader, rem,Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { IconArrowDownLeft, IconArrowUpRight, IconPhoneOff } from '@tabler/icons-react';
-import type { CallHistoryItem, CallHistoryStatus } from '../../../types/callHistory';
 import { useTranslation } from 'react-i18next';
+
+import type { CallHistoryItem, CallHistoryStatus } from '../../../types/callHistory';
 
 interface CallHistoryProps {
   calls: CallHistoryItem[];

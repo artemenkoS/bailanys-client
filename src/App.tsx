@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Navigate,Route, Routes } from 'react-router-dom';
+
 import { LoginForm } from './features/auth/components/LoginForm';
 import { RegisterForm } from './features/auth/components/RegisterForm';
-import { useAuthStore } from './stores/authStore';
 import { Dashboard } from './features/dashboard/components/Dashboard';
+import { useAuthStore } from './stores/authStore';
 
 const queryClient = new QueryClient();
 

@@ -1,6 +1,7 @@
-import { Avatar, Badge, Button, Group, Stack, Text, rem } from '@mantine/core';
+import { Avatar, Badge, Button, Group, rem,Stack, Text } from '@mantine/core';
 import { IconDoorExit } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+
 import { MuteMicButton } from './MuteMicButton';
 
 interface RoomCurrentSectionProps {

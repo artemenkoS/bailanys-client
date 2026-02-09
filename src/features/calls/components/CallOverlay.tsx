@@ -1,9 +1,10 @@
-import { Modal, Stack, Avatar, Text, Group, Button, Card, ActionIcon, rem, Box } from '@mantine/core';
-import { IconPhone, IconPhoneOff, IconCheck, IconX } from '@tabler/icons-react';
+import { ActionIcon, Avatar, Box,Button, Card, Group, Modal, rem, Stack, Text } from '@mantine/core';
+import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+
 import type { DirectSignalingMessage } from '../../../types/signaling';
 import type { CallStatus } from '../hooks/useCallManager';
 import { MuteMicButton } from './MuteMicButton';
-import { useTranslation } from 'react-i18next';
 
 interface CallOverlayProps {
   incomingCall: DirectSignalingMessage | null;

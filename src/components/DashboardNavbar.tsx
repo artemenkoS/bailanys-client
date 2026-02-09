@@ -1,8 +1,9 @@
-import { AppShell, Text, Card, Group, Avatar, Badge, ActionIcon, ScrollArea, Stack, Button, rem } from '@mantine/core';
-import { IconSettings, IconPlus, IconLogout } from '@tabler/icons-react';
+import { ActionIcon, AppShell, Avatar, Badge, Button, Card, Group, rem,ScrollArea, Stack, Text } from '@mantine/core';
+import { IconLogout,IconPlus, IconSettings } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+
 import { useProfile } from '../features/profile/hooks/useProfile';
 import { useAuthStore } from '../stores/authStore';
-import { useTranslation } from 'react-i18next';
 
 interface DashboardNavbarProps {
   onLogout: () => void;
