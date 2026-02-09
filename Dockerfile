@@ -1,12 +1,12 @@
 FROM oven/bun:latest AS build-stage
 WORKDIR /app
 
-
-COPY package.json bun.lockb* yarn.lock* ./
-RUN bun install 
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 RUN bun run build
+
 
 FROM nginx:alpine
 RUN rm /etc/nginx/conf.d/default.conf
