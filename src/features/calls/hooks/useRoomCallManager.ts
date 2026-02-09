@@ -91,8 +91,8 @@ export const useRoomCallManager = () => {
     if (localStreamRef.current) return localStreamRef.current;
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
+        echoCancellation: true,
+        noiseSuppression: true,
         autoGainControl: false,
       },
     });

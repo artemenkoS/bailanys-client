@@ -46,8 +46,8 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
   const getMicStream = useCallback(async () => {
     return navigator.mediaDevices.getUserMedia({
       audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
+        echoCancellation: true,
+        noiseSuppression: true,
         autoGainControl: false,
       },
     });
