@@ -10,8 +10,8 @@ import type {
   RoomUserLeftMessage,
   SocketMessage,
 } from '../../../types/signaling';
-import { useSocket } from './useSocket';
 import { useRtcConfiguration } from './useRtcConfiguration';
+import { useSocket } from './useSocket';
 
 export type RoomCallStatus = 'idle' | 'joining' | 'joined';
 
