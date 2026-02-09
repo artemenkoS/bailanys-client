@@ -15,7 +15,12 @@ import { useAuthStore } from "../stores/authStore";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 class ApiService {
-  private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private refreshPromise: Promise<AuthResponse | null> | null = null;
+
+  private async rawFetch<T>(
+    endpoint: string,
+    options?: RequestInit,
+  ): Promise<T> {
     const isFormData =
       typeof FormData !== "undefined" && options?.body instanceof FormData;
     const headers = new Headers(options?.headers);
@@ -27,17 +32,72 @@ class ApiService {
       ...options,
     });
 
-    if (response.status === 401) {
-      console.log("Unauthorized access - logging out");
-      useAuthStore.getState().logout();
-    }
-
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Request failed");
+      const errorBody = await response.json().catch(() => ({}));
+      const error = new Error(errorBody.error || "Request failed");
+      (error as Error & { status?: number }).status = response.status;
+      throw error;
     }
 
     return response.json();
+  }
+
+  private async refreshSession(): Promise<AuthResponse | null> {
+    const refreshToken = useAuthStore.getState().session?.refresh_token;
+    if (!refreshToken) return null;
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.rawFetch<AuthResponse>("/api/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken }),
+      }).catch(() => null);
+    }
+    const result = await this.refreshPromise;
+    this.refreshPromise = null;
+    return result;
+  }
+
+  private async fetch<T>(
+    endpoint: string,
+    options?: RequestInit,
+    config?: { skipRefresh?: boolean },
+  ): Promise<T> {
+    const response = await this.rawFetch<T>(endpoint, options).catch(
+      async (error: Error & { status?: number }) => {
+        if (config?.skipRefresh) {
+          throw error;
+        }
+        if (error.status !== 401) {
+          throw error;
+        }
+
+        const headers = new Headers(options?.headers);
+        const authHeader = headers.get("Authorization") || "";
+        const hasBearer = authHeader.startsWith("Bearer ");
+        if (!hasBearer) {
+          throw error;
+        }
+
+        const refreshed = await this.refreshSession();
+        if (!refreshed?.session) {
+          console.log("Unauthorized access - logging out");
+          useAuthStore.getState().logout();
+          throw error;
+        }
+
+        useAuthStore.getState().updateSession(refreshed.session);
+        if (refreshed.user) {
+          useAuthStore.getState().updateUser(refreshed.user);
+        }
+
+        headers.set("Authorization", `Bearer ${refreshed.session.access_token}`);
+        return this.rawFetch<T>(endpoint, {
+          ...options,
+          headers,
+        });
+      },
+    );
+
+    return response;
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -53,6 +113,7 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
 
   async getProfile(token: string): Promise<{ profile: Profile }> {
     return this.fetch<{ profile: Profile }>("/api/profile", {

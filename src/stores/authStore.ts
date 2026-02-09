@@ -8,7 +8,8 @@ interface AuthState {
   isAuthenticated: boolean;
   setAuth: (user: User, session: Session) => void;
   logout: () => void;
-  updateToken: (token: string) => void;
+  updateSession: (session: Session) => void;
+  updateUser: (user: User) => void;
   updateUserMetadata: (metadata: Partial<User["user_metadata"]>) => void;
 }
 
@@ -33,11 +34,16 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         }),
 
-      updateToken: (token) =>
+      updateSession: (session) =>
         set((state) => ({
-          session: state.session
-            ? { ...state.session, access_token: token }
-            : null,
+          session: state.session ? { ...state.session, ...session } : session,
+          isAuthenticated: true,
+        })),
+
+      updateUser: (user) =>
+        set(() => ({
+          user,
+          isAuthenticated: true,
         })),
 
       updateUserMetadata: (metadata) =>
