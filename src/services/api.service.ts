@@ -9,6 +9,7 @@ import type {
   CallHistoryItem,
   CreateCallHistoryRequest,
 } from "../types/callHistory";
+import type { RoomOwnerSummary, RoomSummary } from "../types/rooms";
 import { useAuthStore } from "../stores/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -128,6 +129,54 @@ class ApiService {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+    });
+  }
+
+  async getRooms(token: string): Promise<{ rooms: RoomSummary[] }> {
+    return this.fetch<{ rooms: RoomSummary[] }>("/api/rooms", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getMyRooms(token: string): Promise<{ rooms: RoomOwnerSummary[] }> {
+    return this.fetch<{ rooms: RoomOwnerSummary[] }>("/api/rooms/mine", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async updateRoomAvatar(
+    token: string,
+    data: { roomId: string; avatarFile?: File | null; removeAvatar?: boolean },
+  ): Promise<{ ok: boolean; avatarUrl?: string | null }> {
+    const formData = new FormData();
+    formData.append("roomId", data.roomId);
+    if (data.avatarFile) {
+      formData.append("avatar", data.avatarFile);
+    }
+    if (data.removeAvatar) {
+      formData.append("removeAvatar", "true");
+    }
+
+    return this.fetch<{ ok: boolean; avatarUrl?: string | null }>("/api/rooms", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+  }
+
+  async deleteRoom(token: string, roomId: string): Promise<{ ok: boolean }> {
+    return this.fetch<{ ok: boolean }>("/api/rooms", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: roomId }),
     });
   }
 }

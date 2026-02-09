@@ -2,7 +2,7 @@ import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 
@@ -19,6 +19,7 @@ import { Header } from "../../../components/Header";
 import { DashboardNavbar } from "../../../components/DashboardNavbar";
 import { ProfileEditModal } from "../../profile/components/ProfileEditModal";
 import { useAuthStore } from "../../../stores/authStore";
+import type { CreateRoomPayload } from "../../../types/rooms";
 
 export const Dashboard = () => {
   const { logout } = useAuth();
@@ -28,7 +29,6 @@ export const Dashboard = () => {
   const [opened, { toggle }] = useDisclosure();
   const [profileOpened, { open: openProfile, close: closeProfile }] =
     useDisclosure(false);
-  const [roomIdInput, setRoomIdInput] = useState("");
   const {
     data: callHistoryData,
     isLoading: isCallHistoryLoading,
@@ -86,24 +86,32 @@ export const Dashboard = () => {
     [isInRoom, notifyError, startCall],
   );
 
-  const handleCreateRoom = useCallback(() => {
-    if (callStatus !== "idle") {
-      notifyError("rooms.errors.leaveCallToJoin");
-      return;
-    }
-    if (isInRoom) return;
-    const generated = uuidv4();
-    setRoomIdInput(generated);
-    createRoom(generated);
-  }, [callStatus, isInRoom, notifyError, createRoom]);
+  const handleCreateRoom = useCallback(
+    (payload: CreateRoomPayload) => {
+      if (callStatus !== "idle") {
+        notifyError("rooms.errors.leaveCallToJoin");
+        return null;
+      }
+      if (isInRoom) return null;
+      const generated = uuidv4();
+      const { avatarFile, ...roomPayload } = payload;
+      createRoom(generated, roomPayload);
+      return generated;
+    },
+    [callStatus, isInRoom, notifyError, createRoom],
+  );
 
-  const handleJoinRoom = useCallback(() => {
-    if (callStatus !== "idle") {
-      notifyError("rooms.errors.leaveCallToJoin");
-      return;
-    }
-    joinRoom(roomIdInput);
-  }, [callStatus, notifyError, joinRoom, roomIdInput]);
+  const handleJoinRoom = useCallback(
+    (nextRoomId: string, password?: string) => {
+      if (callStatus !== "idle") {
+        notifyError("rooms.errors.leaveCallToJoin");
+        return;
+      }
+      if (isInRoom) return;
+      joinRoom(nextRoomId, { password });
+    },
+    [callStatus, notifyError, joinRoom, isInRoom],
+  );
 
   const handleLeaveRoom = useCallback(() => {
     leaveRoom();
@@ -139,13 +147,18 @@ export const Dashboard = () => {
       <DashboardNavbar
         onLogout={handleLogout}
         onEditProfile={openProfile}
-        onCreateRoom={handleCreateRoom}
+        onCreateRoom={() => {
+          const panel = document.getElementById("room-panel");
+          panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const input = document.getElementById(
+            "room-create-name",
+          ) as HTMLInputElement | null;
+          input?.focus();
+        }}
       />
 
       <AppShell.Main>
         <RoomPanel
-          roomIdInput={roomIdInput}
-          onRoomIdChange={setRoomIdInput}
           onJoinRoom={handleJoinRoom}
           onCreateRoom={handleCreateRoom}
           onLeaveRoom={handleLeaveRoom}

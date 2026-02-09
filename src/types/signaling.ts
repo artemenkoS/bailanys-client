@@ -16,6 +16,9 @@ export interface RoomJoinMessage {
   type: "join-room";
   roomId: string;
   create?: boolean;
+  name?: string;
+  isPrivate?: boolean;
+  password?: string;
 }
 
 export interface RoomLeaveMessage {

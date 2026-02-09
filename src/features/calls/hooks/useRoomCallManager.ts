@@ -280,7 +280,7 @@ export const useRoomCallManager = () => {
   }, []);
 
   const joinRoom = useCallback(
-    (nextRoomId: string, options?: { create?: boolean }) => {
+    (nextRoomId: string, options?: { password?: string }) => {
       const trimmed = nextRoomId.trim();
       if (!trimmed) {
         setError("rooms.errors.roomIdRequired");
@@ -292,17 +292,35 @@ export const useRoomCallManager = () => {
       sendMessage({
         type: "join-room",
         roomId: trimmed,
-        create: options?.create,
+        password: options?.password,
       });
     },
     [sendMessage, status],
   );
 
   const createRoom = useCallback(
-    (nextRoomId: string) => {
-      joinRoom(nextRoomId, { create: true });
+    (
+      nextRoomId: string,
+      options: { name: string; isPrivate?: boolean; password?: string },
+    ) => {
+      const trimmed = nextRoomId.trim();
+      if (!trimmed) {
+        setError("rooms.errors.roomIdRequired");
+        return;
+      }
+      if (roomIdRef.current || status === "joining") return;
+      setError(null);
+      setStatus("joining");
+      sendMessage({
+        type: "join-room",
+        roomId: trimmed,
+        create: true,
+        name: options.name,
+        isPrivate: options.isPrivate,
+        password: options.password,
+      });
     },
-    [joinRoom],
+    [sendMessage, status],
   );
 
   const leaveRoom = useCallback(() => {
@@ -408,10 +426,30 @@ export const useRoomCallManager = () => {
           break;
         }
         case "error": {
-          if (msg.message === "Room not found") {
-            setError("rooms.errors.notFound");
-          } else {
-            setError("rooms.errors.server");
+          switch (msg.message) {
+            case "Room not found":
+              setError("rooms.errors.notFound");
+              break;
+            case "Room password required":
+              setError("rooms.errors.passwordRequired");
+              break;
+            case "Invalid room password":
+              setError("rooms.errors.invalidPassword");
+              break;
+            case "Room is full":
+              setError("rooms.errors.roomFull");
+              break;
+            case "Room inactive":
+              setError("rooms.errors.inactive");
+              break;
+            case "Room name required":
+              setError("rooms.errors.nameRequired");
+              break;
+            case "Room privacy unsupported":
+              setError("rooms.errors.privacyUnsupported");
+              break;
+            default:
+              setError("rooms.errors.server");
           }
           if (status === "joining") setStatus("idle");
           break;
