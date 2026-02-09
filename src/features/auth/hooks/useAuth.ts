@@ -1,19 +1,13 @@
-import { useMutation } from "@tanstack/react-query";
-import { apiService } from "../../../services/api.service";
-import { useAuthStore } from "../../../stores/authStore";
-import type { RegisterData, LoginData } from "../../../types/auth";
-import { notifications } from "@mantine/notifications";
-import { useTranslation } from "react-i18next";
+import { useMutation } from '@tanstack/react-query';
+import { apiService } from '../../../services/api.service';
+import { useAuthStore } from '../../../stores/authStore';
+import type { RegisterData, LoginData } from '../../../types/auth';
+import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 
 export const useAuth = () => {
   const { t } = useTranslation();
-  const {
-    user,
-    session,
-    isAuthenticated,
-    setAuth,
-    logout: logoutStore,
-  } = useAuthStore();
+  const { user, session, isAuthenticated, setAuth, logout: logoutStore } = useAuthStore();
 
   const registerMutation = useMutation({
     mutationFn: (data: RegisterData) => apiService.register(data),
@@ -21,17 +15,17 @@ export const useAuth = () => {
       if (response.session && response.user) {
         setAuth(response.user, response.session);
         notifications.show({
-          title: t("notifications.success"),
-          message: t("notifications.registrationSuccess"),
-          color: "green",
+          title: t('notifications.success'),
+          message: t('notifications.registrationSuccess'),
+          color: 'green',
         });
       }
     },
     onError: (error: Error) => {
       notifications.show({
-        title: t("notifications.error"),
-        message: error.message || t("notifications.registrationFailed"),
-        color: "red",
+        title: t('notifications.error'),
+        message: error.message || t('notifications.registrationFailed'),
+        color: 'red',
       });
     },
   });
@@ -42,17 +36,17 @@ export const useAuth = () => {
       if (response.session && response.user) {
         setAuth(response.user, response.session);
         notifications.show({
-          title: t("notifications.success"),
-          message: t("notifications.loginSuccess"),
-          color: "green",
+          title: t('notifications.success'),
+          message: t('notifications.loginSuccess'),
+          color: 'green',
         });
       }
     },
     onError: (error: Error) => {
       notifications.show({
-        title: t("notifications.error"),
-        message: error.message || t("notifications.loginFailed"),
-        color: "red",
+        title: t('notifications.error'),
+        message: error.message || t('notifications.loginFailed'),
+        color: 'red',
       });
     },
   });
@@ -60,9 +54,9 @@ export const useAuth = () => {
   const logout = () => {
     logoutStore();
     notifications.show({
-      title: t("notifications.loggedOutTitle"),
-      message: t("notifications.loggedOutMessage"),
-      color: "blue",
+      title: t('notifications.loggedOutTitle'),
+      message: t('notifications.loggedOutMessage'),
+      color: 'blue',
     });
   };
 

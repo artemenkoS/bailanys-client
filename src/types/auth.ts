@@ -36,7 +36,7 @@ export interface Profile {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  status: "online" | "offline" | "busy" | "in-call";
+  status: 'online' | 'offline' | 'busy' | 'in-call';
   last_seen: string;
 }
 

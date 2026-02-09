@@ -1,30 +1,19 @@
-import {
-  Button,
-  FileInput,
-  PasswordInput,
-  SegmentedControl,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import { IconPlus } from "@tabler/icons-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import type { CreateRoomPayload } from "../../../types/rooms";
+import { Button, FileInput, PasswordInput, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { CreateRoomPayload } from '../../../types/rooms';
 
 interface RoomCreateSectionProps {
   disabled?: boolean;
   onCreate: (payload: CreateRoomPayload) => void;
 }
 
-export const RoomCreateSection = ({
-  disabled,
-  onCreate,
-}: RoomCreateSectionProps) => {
+export const RoomCreateSection = ({ disabled, onCreate }: RoomCreateSectionProps) => {
   const { t } = useTranslation();
-  const [name, setName] = useState("");
-  const [privacy, setPrivacy] = useState<"public" | "private">("public");
-  const [password, setPassword] = useState("");
+  const [name, setName] = useState('');
+  const [privacy, setPrivacy] = useState<'public' | 'private'>('public');
+  const [password, setPassword] = useState('');
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -35,13 +24,13 @@ export const RoomCreateSection = ({
       setAvatarFile(null);
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      setAvatarError(t("profile.onlyImages"));
+    if (!file.type.startsWith('image/')) {
+      setAvatarError(t('profile.onlyImages'));
       setAvatarFile(null);
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setAvatarError(t("profile.maxFileSize"));
+      setAvatarError(t('profile.maxFileSize'));
       setAvatarFile(null);
       return;
     }
@@ -52,13 +41,13 @@ export const RoomCreateSection = ({
     if (avatarError) return;
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setErrorKey("rooms.errors.nameRequired");
+      setErrorKey('rooms.errors.nameRequired');
       return;
     }
-    const isPrivate = privacy === "private";
+    const isPrivate = privacy === 'private';
     const trimmedPassword = password.trim();
     if (isPrivate && !trimmedPassword) {
-      setErrorKey("rooms.errors.passwordRequired");
+      setErrorKey('rooms.errors.passwordRequired');
       return;
     }
     setErrorKey(null);
@@ -73,12 +62,12 @@ export const RoomCreateSection = ({
   return (
     <Stack gap={6}>
       <Text size="sm" fw={600}>
-        {t("rooms.createTitle")}
+        {t('rooms.createTitle')}
       </Text>
       <TextInput
         id="room-create-name"
-        label={t("rooms.nameLabel")}
-        placeholder={t("rooms.namePlaceholder")}
+        label={t('rooms.nameLabel')}
+        placeholder={t('rooms.namePlaceholder')}
         value={name}
         onChange={(e) => {
           setName(e.currentTarget.value);
@@ -90,23 +79,23 @@ export const RoomCreateSection = ({
         fullWidth
         value={privacy}
         onChange={(value) => {
-          const next = value as "public" | "private";
+          const next = value as 'public' | 'private';
           setPrivacy(next);
-          if (next === "public") {
-            setPassword("");
+          if (next === 'public') {
+            setPassword('');
           }
           if (errorKey) setErrorKey(null);
         }}
         data={[
-          { label: t("rooms.privacyPublic"), value: "public" },
-          { label: t("rooms.privacyPrivate"), value: "private" },
+          { label: t('rooms.privacyPublic'), value: 'public' },
+          { label: t('rooms.privacyPrivate'), value: 'private' },
         ]}
         disabled={disabled}
       />
-      {privacy === "private" && (
+      {privacy === 'private' && (
         <PasswordInput
-          label={t("rooms.passwordLabel")}
-          placeholder={t("rooms.passwordPlaceholder")}
+          label={t('rooms.passwordLabel')}
+          placeholder={t('rooms.passwordPlaceholder')}
           value={password}
           onChange={(e) => {
             setPassword(e.currentTarget.value);
@@ -116,9 +105,9 @@ export const RoomCreateSection = ({
         />
       )}
       <FileInput
-        label={t("rooms.avatarLabel")}
-        placeholder={t("rooms.avatarPlaceholder")}
-        description={t("rooms.avatarOptional")}
+        label={t('rooms.avatarLabel')}
+        placeholder={t('rooms.avatarPlaceholder')}
+        description={t('rooms.avatarOptional')}
         accept="image/*"
         value={avatarFile}
         onChange={handleAvatarChange}
@@ -126,13 +115,8 @@ export const RoomCreateSection = ({
         clearable
         disabled={disabled}
       />
-      <Button
-        leftSection={<IconPlus size={18} />}
-        onClick={handleCreate}
-        radius="md"
-        disabled={disabled}
-      >
-        {t("rooms.create")}
+      <Button leftSection={<IconPlus size={18} />} onClick={handleCreate} radius="md" disabled={disabled}>
+        {t('rooms.create')}
       </Button>
       {errorKey && (
         <Text size="sm" c="red" fw={500}>

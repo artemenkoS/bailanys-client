@@ -1,30 +1,21 @@
-import {
-  Container,
-  Stack,
-  Title,
-  SimpleGrid,
-  Center,
-  Loader,
-  Text,
-  rem,
-} from "@mantine/core";
-import { IconUsers } from "@tabler/icons-react";
-import { ContactCard } from "./ContactCard";
-import { useTranslation } from "react-i18next";
-import { useOnlineUsers } from "../hooks/useOnlineUsers";
+import { Container, Stack, Title, SimpleGrid, Center, Loader, Text, rem } from '@mantine/core';
+import { IconUsers } from '@tabler/icons-react';
+import { ContactCard } from './ContactCard';
+import { useTranslation } from 'react-i18next';
+import { useOnlineUsers } from '../hooks/useOnlineUsers';
 
 interface ContactListProps {
-  onStartCall: (targetId: string, type: "audio" | "video") => void;
+  onStartCall: (targetId: string, type: 'audio' | 'video') => void;
 }
 
 export const ContactList = ({ onStartCall }: ContactListProps) => {
   const { data, isLoading, isError } = useOnlineUsers();
   const { t } = useTranslation();
   return (
-    <Container size="xl" px={{ base: "xs", sm: "md" }}>
+    <Container size="xl" px={{ base: 'xs', sm: 'md' }}>
       <Stack gap="xl" mt="md">
         <Title order={2} fw={800} style={{ fontSize: rem(24) }}>
-          {t("contacts.title")}
+          {t('contacts.title')}
         </Title>
 
         {isLoading ? (
@@ -34,7 +25,7 @@ export const ContactList = ({ onStartCall }: ContactListProps) => {
         ) : isError ? (
           <Center h={200}>
             <Text c="red" fw={500}>
-              {t("contacts.connectionError")}
+              {t('contacts.connectionError')}
             </Text>
           </Center>
         ) : data && data.users.length > 0 ? (
@@ -47,7 +38,7 @@ export const ContactList = ({ onStartCall }: ContactListProps) => {
           <Center h={300}>
             <Stack align="center" gap="xs">
               <IconUsers size={48} color="var(--mantine-color-gray-4)" />
-              <Text c="dimmed">{t("contacts.empty")}</Text>
+              <Text c="dimmed">{t('contacts.empty')}</Text>
             </Stack>
           </Center>
         )}

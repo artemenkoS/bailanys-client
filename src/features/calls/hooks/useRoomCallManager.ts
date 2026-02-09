@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuthStore } from "../../../stores/authStore";
-import { useSocket } from "./useSocket";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAuthStore } from '../../../stores/authStore';
+import { useSocket } from './useSocket';
 import type {
   RoomAnswerMessage,
   RoomIceMessage,
@@ -9,29 +9,26 @@ import type {
   RoomUserJoinedMessage,
   RoomUserLeftMessage,
   SocketMessage,
-} from "../../../types/signaling";
+} from '../../../types/signaling';
 
 const RTC_CONFIGURATION: RTCConfiguration = {
   iceServers: [
     {
-      urls: [
-        "turns:194.32.140.234.sslip.io:5349?transport=tcp",
-        "turn:194.32.140.234:3478?transport=udp",
-      ],
-      username: "bailanys",
-      credential: "Astana20206!",
+      urls: ['turns:194.32.140.234.sslip.io:5349?transport=tcp', 'turn:194.32.140.234:3478?transport=udp'],
+      username: 'bailanys',
+      credential: 'Astana20206!',
     },
   ],
-  iceTransportPolicy: "relay",
+  iceTransportPolicy: 'relay',
 };
 
-export type RoomCallStatus = "idle" | "joining" | "joined";
+export type RoomCallStatus = 'idle' | 'joining' | 'joined';
 
 export const useRoomCallManager = () => {
   const { sendMessage, socket } = useSocket();
   const userId = useAuthStore((state) => state.user?.id);
 
-  const [status, setStatus] = useState<RoomCallStatus>("idle");
+  const [status, setStatus] = useState<RoomCallStatus>('idle');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [members, setMembers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -48,15 +45,12 @@ export const useRoomCallManager = () => {
     roomIdRef.current = roomId;
   }, [roomId]);
 
-  const applyMuteState = useCallback(
-    (stream: MediaStream | null, muted: boolean) => {
-      if (!stream) return;
-      for (const track of stream.getAudioTracks()) {
-        track.enabled = !muted;
-      }
-    },
-    [],
-  );
+  const applyMuteState = useCallback((stream: MediaStream | null, muted: boolean) => {
+    if (!stream) return;
+    for (const track of stream.getAudioTracks()) {
+      track.enabled = !muted;
+    }
+  }, []);
 
   const toggleMicMute = useCallback(() => {
     const nextMuted = !isMicMutedRef.current;
@@ -71,7 +65,7 @@ export const useRoomCallManager = () => {
     const audio = new Audio();
     audio.autoplay = true;
     audio.muted = false;
-    audio.setAttribute("playsinline", "true");
+    audio.setAttribute('playsinline', 'true');
     document.body.appendChild(audio);
     remoteAudioRef.current.set(peerId, audio);
     return audio;
@@ -86,13 +80,13 @@ export const useRoomCallManager = () => {
   }, []);
 
   const applyLowLatencySender = useCallback(async (peer: RTCPeerConnection) => {
-    const sender = peer.getSenders().find((s) => s.track?.kind === "audio");
+    const sender = peer.getSenders().find((s) => s.track?.kind === 'audio');
     if (!sender) return;
 
     const p = sender.getParameters();
     p.encodings = p.encodings?.length ? p.encodings : [{}];
-    p.encodings[0].priority = "high";
-    p.encodings[0].networkPriority = "high";
+    p.encodings[0].priority = 'high';
+    p.encodings[0].networkPriority = 'high';
 
     try {
       await sender.setParameters(p);
@@ -120,7 +114,7 @@ export const useRoomCallManager = () => {
     if (!stream) return;
     const track = stream.getAudioTracks()[0];
     if (!track) return;
-    const existing = peer.getSenders().find((s) => s.track?.kind === "audio");
+    const existing = peer.getSenders().find((s) => s.track?.kind === 'audio');
     if (existing) {
       await existing.replaceTrack(track);
       return;
@@ -141,7 +135,7 @@ export const useRoomCallManager = () => {
         const currentRoomId = roomIdRef.current;
         if (!currentRoomId) return;
         sendMessage({
-          type: "room-ice",
+          type: 'room-ice',
           roomId: currentRoomId,
           to: peerId,
           candidate: event.candidate,
@@ -157,7 +151,7 @@ export const useRoomCallManager = () => {
 
       return peer;
     },
-    [ensureRemoteAudio, sendMessage],
+    [ensureRemoteAudio, sendMessage]
   );
 
   const cleanupPeer = useCallback(
@@ -170,7 +164,7 @@ export const useRoomCallManager = () => {
       pendingCandidatesRef.current.delete(peerId);
       cleanupRemoteAudio(peerId);
     },
-    [cleanupRemoteAudio],
+    [cleanupRemoteAudio]
   );
 
   const releaseResources = useCallback(() => {
@@ -186,7 +180,7 @@ export const useRoomCallManager = () => {
     roomIdRef.current = null;
     setRoomId(null);
     setMembers([]);
-    setStatus("idle");
+    setStatus('idle');
     setError(null);
     isMicMutedRef.current = false;
     setIsMicMuted(false);
@@ -203,20 +197,14 @@ export const useRoomCallManager = () => {
       await peer.setLocalDescription(offer);
 
       sendMessage({
-        type: "room-offer",
+        type: 'room-offer',
         roomId: currentRoomId,
         to: peerId,
         offer,
-        callType: "audio",
+        callType: 'audio',
       });
     },
-    [
-      createPeerConnection,
-      ensureLocalStream,
-      attachLocalAudio,
-      applyLowLatencySender,
-      sendMessage,
-    ],
+    [createPeerConnection, ensureLocalStream, attachLocalAudio, applyLowLatencySender, sendMessage]
   );
 
   const handleRoomOffer = useCallback(
@@ -233,7 +221,7 @@ export const useRoomCallManager = () => {
       await peer.setLocalDescription(answer);
 
       sendMessage({
-        type: "room-answer",
+        type: 'room-answer',
         roomId: msg.roomId,
         to: msg.from,
         answer,
@@ -245,13 +233,7 @@ export const useRoomCallManager = () => {
       }
       pendingCandidatesRef.current.delete(msg.from);
     },
-    [
-      createPeerConnection,
-      ensureLocalStream,
-      attachLocalAudio,
-      applyLowLatencySender,
-      sendMessage,
-    ],
+    [createPeerConnection, ensureLocalStream, attachLocalAudio, applyLowLatencySender, sendMessage]
   );
 
   const handleRoomAnswer = useCallback(async (msg: RoomAnswerMessage) => {
@@ -283,36 +265,33 @@ export const useRoomCallManager = () => {
     (nextRoomId: string, options?: { password?: string }) => {
       const trimmed = nextRoomId.trim();
       if (!trimmed) {
-        setError("rooms.errors.roomIdRequired");
+        setError('rooms.errors.roomIdRequired');
         return;
       }
-      if (roomIdRef.current || status === "joining") return;
+      if (roomIdRef.current || status === 'joining') return;
       setError(null);
-      setStatus("joining");
+      setStatus('joining');
       sendMessage({
-        type: "join-room",
+        type: 'join-room',
         roomId: trimmed,
         password: options?.password,
       });
     },
-    [sendMessage, status],
+    [sendMessage, status]
   );
 
   const createRoom = useCallback(
-    (
-      nextRoomId: string,
-      options: { name: string; isPrivate?: boolean; password?: string },
-    ) => {
+    (nextRoomId: string, options: { name: string; isPrivate?: boolean; password?: string }) => {
       const trimmed = nextRoomId.trim();
       if (!trimmed) {
-        setError("rooms.errors.roomIdRequired");
+        setError('rooms.errors.roomIdRequired');
         return;
       }
-      if (roomIdRef.current || status === "joining") return;
+      if (roomIdRef.current || status === 'joining') return;
       setError(null);
-      setStatus("joining");
+      setStatus('joining');
       sendMessage({
-        type: "join-room",
+        type: 'join-room',
         roomId: trimmed,
         create: true,
         name: options.name,
@@ -320,12 +299,12 @@ export const useRoomCallManager = () => {
         password: options.password,
       });
     },
-    [sendMessage, status],
+    [sendMessage, status]
   );
 
   const leaveRoom = useCallback(() => {
-    if (status === "idle" && !roomIdRef.current) return;
-    sendMessage({ type: "leave-room" });
+    if (status === 'idle' && !roomIdRef.current) return;
+    sendMessage({ type: 'leave-room' });
     cleanupRoom();
   }, [cleanupRoom, sendMessage, status]);
 
@@ -341,19 +320,19 @@ export const useRoomCallManager = () => {
       }
 
       switch (msg.type) {
-        case "room-joined": {
+        case 'room-joined': {
           const payload = msg as RoomJoinedMessage;
           if (!payload.roomId || !Array.isArray(payload.users)) return;
           setError(null);
           roomIdRef.current = payload.roomId;
           setRoomId(payload.roomId);
-          setStatus("joined");
+          setStatus('joined');
           setMembers(payload.users);
 
           if (!userId) {
-            sendMessage({ type: "leave-room" });
+            sendMessage({ type: 'leave-room' });
             cleanupRoom();
-            setError("rooms.errors.server");
+            setError('rooms.errors.server');
             return;
           }
 
@@ -362,9 +341,9 @@ export const useRoomCallManager = () => {
             try {
               await ensureLocalStream();
             } catch (err) {
-              console.error("Failed to access microphone:", err);
+              console.error('Failed to access microphone:', err);
               leaveRoom();
-              setError("rooms.errors.micDenied");
+              setError('rooms.errors.micDenied');
               return;
             }
 
@@ -372,22 +351,20 @@ export const useRoomCallManager = () => {
               try {
                 await sendOfferToPeer(peerId, payload.roomId);
               } catch (err) {
-                console.error("Failed to send offer:", err);
+                console.error('Failed to send offer:', err);
               }
             }
           }
           break;
         }
-        case "room-user-joined": {
+        case 'room-user-joined': {
           const payload = msg as RoomUserJoinedMessage;
           if (!payload.roomId || payload.roomId !== roomIdRef.current) return;
           if (!payload.userId) return;
-          setMembers((prev) =>
-            prev.includes(payload.userId) ? prev : [...prev, payload.userId],
-          );
+          setMembers((prev) => (prev.includes(payload.userId) ? prev : [...prev, payload.userId]));
           break;
         }
-        case "room-user-left": {
+        case 'room-user-left': {
           const payload = msg as RoomUserLeftMessage;
           if (!payload.roomId || payload.roomId !== roomIdRef.current) return;
           if (!payload.userId) return;
@@ -395,63 +372,63 @@ export const useRoomCallManager = () => {
           cleanupPeer(payload.userId);
           break;
         }
-        case "room-offer": {
+        case 'room-offer': {
           const payload = msg as RoomOfferMessage;
           if (payload.roomId !== roomIdRef.current) return;
           try {
             await handleRoomOffer(payload);
           } catch (err) {
-            console.error("Room offer error:", err);
+            console.error('Room offer error:', err);
           }
           break;
         }
-        case "room-answer": {
+        case 'room-answer': {
           const payload = msg as RoomAnswerMessage;
           if (payload.roomId !== roomIdRef.current) return;
           try {
             await handleRoomAnswer(payload);
           } catch (err) {
-            console.error("Room answer error:", err);
+            console.error('Room answer error:', err);
           }
           break;
         }
-        case "room-ice": {
+        case 'room-ice': {
           const payload = msg as RoomIceMessage;
           if (payload.roomId !== roomIdRef.current) return;
           try {
             await handleRoomIceCandidate(payload);
           } catch (err) {
-            console.error("Room ICE error:", err);
+            console.error('Room ICE error:', err);
           }
           break;
         }
-        case "error": {
+        case 'error': {
           switch (msg.message) {
-            case "Room not found":
-              setError("rooms.errors.notFound");
+            case 'Room not found':
+              setError('rooms.errors.notFound');
               break;
-            case "Room password required":
-              setError("rooms.errors.passwordRequired");
+            case 'Room password required':
+              setError('rooms.errors.passwordRequired');
               break;
-            case "Invalid room password":
-              setError("rooms.errors.invalidPassword");
+            case 'Invalid room password':
+              setError('rooms.errors.invalidPassword');
               break;
-            case "Room is full":
-              setError("rooms.errors.roomFull");
+            case 'Room is full':
+              setError('rooms.errors.roomFull');
               break;
-            case "Room inactive":
-              setError("rooms.errors.inactive");
+            case 'Room inactive':
+              setError('rooms.errors.inactive');
               break;
-            case "Room name required":
-              setError("rooms.errors.nameRequired");
+            case 'Room name required':
+              setError('rooms.errors.nameRequired');
               break;
-            case "Room privacy unsupported":
-              setError("rooms.errors.privacyUnsupported");
+            case 'Room privacy unsupported':
+              setError('rooms.errors.privacyUnsupported');
               break;
             default:
-              setError("rooms.errors.server");
+              setError('rooms.errors.server');
           }
-          if (status === "joining") setStatus("idle");
+          if (status === 'joining') setStatus('idle');
           break;
         }
       }
@@ -462,13 +439,13 @@ export const useRoomCallManager = () => {
       cleanupRoom();
     };
 
-    socket.addEventListener("message", handleMessage);
-    socket.addEventListener("close", handleClose);
-    socket.addEventListener("error", handleClose);
+    socket.addEventListener('message', handleMessage);
+    socket.addEventListener('close', handleClose);
+    socket.addEventListener('error', handleClose);
     return () => {
-      socket.removeEventListener("message", handleMessage);
-      socket.removeEventListener("close", handleClose);
-      socket.removeEventListener("error", handleClose);
+      socket.removeEventListener('message', handleMessage);
+      socket.removeEventListener('close', handleClose);
+      socket.removeEventListener('error', handleClose);
     };
   }, [
     socket,

@@ -1,6 +1,6 @@
-import { ActionIcon } from "@mantine/core";
-import { IconMicrophone, IconMicrophoneOff } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
+import { ActionIcon } from '@mantine/core';
+import { IconMicrophone, IconMicrophoneOff } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 interface MuteMicButtonProps {
   isMuted: boolean;
@@ -12,13 +12,13 @@ export const MuteMicButton = ({ isMuted, onToggle }: MuteMicButtonProps) => {
 
   return (
     <ActionIcon
-      color={isMuted ? "yellow" : "gray"}
+      color={isMuted ? 'yellow' : 'gray'}
       size="xl"
       radius="md"
-      variant={isMuted ? "filled" : "light"}
+      variant={isMuted ? 'filled' : 'light'}
       onClick={onToggle}
-      title={isMuted ? t("common.unmuteMic") : t("common.muteMic")}
-      style={{ transition: "transform 0.2s ease" }}
+      title={isMuted ? t('common.unmuteMic') : t('common.muteMic')}
+      style={{ transition: 'transform 0.2s ease' }}
     >
       {isMuted ? <IconMicrophoneOff size={20} /> : <IconMicrophone size={20} />}
     </ActionIcon>

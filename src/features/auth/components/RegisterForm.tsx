@@ -1,17 +1,10 @@
-import {
-  Button,
-  Flex,
-  TextInput,
-  Typography,
-  Stack,
-  Group,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
+import { Button, Flex, TextInput, Typography, Stack, Group } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 
 export const RegisterForm = () => {
   const { register, isRegistering, isAuthenticated } = useAuth();
@@ -20,27 +13,23 @@ export const RegisterForm = () => {
 
   const form = useForm({
     initialValues: {
-      email: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
+      email: '',
+      username: '',
+      password: '',
+      confirmPassword: '',
     },
 
     validate: {
-      email: (value) =>
-        /^\S+@\S+$/.test(value) ? null : t("auth.invalidEmail"),
-      username: (value) =>
-        value.length < 4 ? t("auth.usernameTooShort") : null,
-      password: (value) =>
-        value.length < 6 ? t("auth.passwordTooShort") : null,
-      confirmPassword: (value, values) =>
-        value !== values.password ? t("auth.passwordsNotMatch") : null,
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : t('auth.invalidEmail')),
+      username: (value) => (value.length < 4 ? t('auth.usernameTooShort') : null),
+      password: (value) => (value.length < 6 ? t('auth.passwordTooShort') : null),
+      confirmPassword: (value, values) => (value !== values.password ? t('auth.passwordsNotMatch') : null),
     },
   });
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
@@ -59,53 +48,53 @@ export const RegisterForm = () => {
       gap="lg"
       align="center"
       justify="center"
-      style={{ width: "100vw", margin: "auto", height: "100vh" }}
+      style={{ width: '100vw', margin: 'auto', height: '100vh' }}
     >
       <form onSubmit={handleSubmit} style={{ width: 350 }}>
         <Stack gap="md">
           <Typography variant="h4" style={{ marginBottom: 16 }}>
-            {t("auth.registerTitle")}
+            {t('auth.registerTitle')}
           </Typography>
 
           <TextInput
             withAsterisk
-            label={t("auth.email")}
-            placeholder={t("auth.emailPlaceholder")}
-            {...form.getInputProps("email")}
+            label={t('auth.email')}
+            placeholder={t('auth.emailPlaceholder')}
+            {...form.getInputProps('email')}
           />
 
           <TextInput
             withAsterisk
-            label={t("auth.username")}
-            placeholder={t("auth.usernamePlaceholder")}
-            {...form.getInputProps("username")}
+            label={t('auth.username')}
+            placeholder={t('auth.usernamePlaceholder')}
+            {...form.getInputProps('username')}
           />
 
           <TextInput
             withAsterisk
-            label={t("auth.password")}
+            label={t('auth.password')}
             type="password"
-            placeholder={t("auth.passwordPlaceholder")}
-            {...form.getInputProps("password")}
+            placeholder={t('auth.passwordPlaceholder')}
+            {...form.getInputProps('password')}
           />
 
           <TextInput
             withAsterisk
-            label={t("auth.confirmPassword")}
+            label={t('auth.confirmPassword')}
             type="password"
-            placeholder={t("auth.passwordPlaceholder")}
-            {...form.getInputProps("confirmPassword")}
+            placeholder={t('auth.passwordPlaceholder')}
+            {...form.getInputProps('confirmPassword')}
           />
 
           <Button type="submit" fullWidth loading={isRegistering} mt="md">
-            {t("auth.registerButton")}
+            {t('auth.registerButton')}
           </Button>
           <Group justify="center">
             <LanguageSwitcher size="sm" />
           </Group>
 
-          <Button variant="subtle" fullWidth onClick={() => navigate("/login")}>
-            {t("auth.gotoLogin")}
+          <Button variant="subtle" fullWidth onClick={() => navigate('/login')}>
+            {t('auth.gotoLogin')}
           </Button>
         </Stack>
       </form>

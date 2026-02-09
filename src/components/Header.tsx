@@ -1,8 +1,8 @@
-import { AppShell, Group, Burger, Title, rem, Text } from "@mantine/core";
-import { IconUsers } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { useOnlineUsers } from "../features/contacts/hooks/useOnlineUsers";
+import { AppShell, Group, Burger, Title, rem, Text } from '@mantine/core';
+import { IconUsers } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useOnlineUsers } from '../features/contacts/hooks/useOnlineUsers';
 
 interface HeaderProps {
   opened: boolean;
@@ -27,7 +27,7 @@ export const Header = ({ opened, toggle }: HeaderProps) => {
           <Group gap="xs" visibleFrom="xs">
             <IconUsers size={18} color="gray" />
             <Text size="sm" c="dimmed" fw={500}>
-              {t("header.onlineCount", { count: data?.users.length || 0 })}
+              {t('header.onlineCount', { count: data?.users.length || 0 })}
             </Text>
           </Group>
           <LanguageSwitcher />

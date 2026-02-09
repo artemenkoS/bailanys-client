@@ -1,7 +1,7 @@
-import { Avatar, Badge, Button, Group, Stack, Text, rem } from "@mantine/core";
-import { IconDoorExit } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
-import { MuteMicButton } from "./MuteMicButton";
+import { Avatar, Badge, Button, Group, Stack, Text, rem } from '@mantine/core';
+import { IconDoorExit } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import { MuteMicButton } from './MuteMicButton';
 
 interface RoomCurrentSectionProps {
   roomLabel: string;
@@ -30,16 +30,11 @@ export const RoomCurrentSection = ({
     <Stack gap="sm">
       <Group justify="space-between" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
-          <Avatar
-            size="sm"
-            radius="md"
-            src={roomAvatarUrl || undefined}
-            color="indigo"
-          >
-            {roomLabel?.[0]?.toUpperCase() ?? "#"}
+          <Avatar size="sm" radius="md" src={roomAvatarUrl || undefined} color="indigo">
+            {roomLabel?.[0]?.toUpperCase() ?? '#'}
           </Avatar>
           <Text size="sm" fw={600}>
-            {t("rooms.currentRoom", { id: roomLabel })}
+            {t('rooms.currentRoom', { id: roomLabel })}
           </Text>
         </Group>
         <Group gap="xs" wrap="nowrap">
@@ -51,20 +46,20 @@ export const RoomCurrentSection = ({
             onClick={onLeaveRoom}
             radius="md"
           >
-            {t("rooms.leave")}
+            {t('rooms.leave')}
           </Button>
         </Group>
       </Group>
 
       <Text size="xs" c="dimmed" style={{ letterSpacing: rem(0.3) }}>
-        {t("rooms.participants", { count: members.length })}
+        {t('rooms.participants', { count: members.length })}
       </Text>
       <Group gap="xs" wrap="wrap">
         {members.map((id) => (
           <Badge
             key={id}
-            color={id === currentUserId ? "indigo" : "gray"}
-            variant={id === currentUserId ? "filled" : "light"}
+            color={id === currentUserId ? 'indigo' : 'gray'}
+            variant={id === currentUserId ? 'filled' : 'light'}
           >
             {resolveMemberLabel(id)}
           </Badge>

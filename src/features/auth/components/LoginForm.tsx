@@ -1,18 +1,11 @@
-import {
-  Button,
-  Flex,
-  TextInput,
-  Typography,
-  Stack,
-  Group,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { Button, Flex, TextInput, Typography, Stack, Group } from '@mantine/core';
+import { useForm } from '@mantine/form';
 
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 
 export const LoginForm = () => {
   const { login, isLoggingIn, isAuthenticated } = useAuth();
@@ -21,21 +14,19 @@ export const LoginForm = () => {
 
   const form = useForm({
     initialValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
 
     validate: {
-      email: (value) =>
-        /^\S+@\S+$/.test(value) ? null : t("auth.invalidEmail"),
-      password: (value) =>
-        value.length < 6 ? t("auth.passwordTooShort") : null,
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : t('auth.invalidEmail')),
+      password: (value) => (value.length < 6 ? t('auth.passwordTooShort') : null),
     },
   });
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
@@ -49,39 +40,35 @@ export const LoginForm = () => {
       gap="lg"
       align="center"
       justify="center"
-      style={{ width: "100vw", margin: "auto", height: "100vh" }}
+      style={{ width: '100vw', margin: 'auto', height: '100vh' }}
     >
       <form onSubmit={handleSubmit} style={{ width: 350 }}>
         <Stack gap="md">
           <Typography variant="h4" style={{ marginBottom: 16 }}>
-            {t("auth.loginTitle")}
+            {t('auth.loginTitle')}
           </Typography>
 
           <TextInput
             withAsterisk
-            label={t("auth.email")}
-            placeholder={t("auth.emailPlaceholder")}
-            {...form.getInputProps("email")}
+            label={t('auth.email')}
+            placeholder={t('auth.emailPlaceholder')}
+            {...form.getInputProps('email')}
           />
 
           <TextInput
             withAsterisk
-            label={t("auth.password")}
+            label={t('auth.password')}
             type="password"
-            placeholder={t("auth.passwordPlaceholder")}
-            {...form.getInputProps("password")}
+            placeholder={t('auth.passwordPlaceholder')}
+            {...form.getInputProps('password')}
           />
 
           <Button type="submit" fullWidth loading={isLoggingIn} mt="md">
-            {t("auth.loginButton")}
+            {t('auth.loginButton')}
           </Button>
 
-          <Button
-            variant="subtle"
-            fullWidth
-            onClick={() => navigate("/register")}
-          >
-            {t("auth.gotoRegister")}
+          <Button variant="subtle" fullWidth onClick={() => navigate('/register')}>
+            {t('auth.gotoRegister')}
           </Button>
           <Group justify="center">
             <LanguageSwitcher size="sm" />

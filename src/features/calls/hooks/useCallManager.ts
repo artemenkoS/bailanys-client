@@ -1,45 +1,32 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useSocket } from "./useSocket";
-import { useWebRTC } from "./useWebRTC";
-import { apiService } from "../../../services/api.service";
-import { useAuthStore } from "../../../stores/authStore";
-import type {
-  CallDirection,
-  CallHistoryStatus,
-  CallType,
-} from "../../../types/callHistory";
-import type {
-  DirectSignalingMessage,
-  HangupReason,
-  SocketMessage,
-} from "../../../types/signaling";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSocket } from './useSocket';
+import { useWebRTC } from './useWebRTC';
+import { apiService } from '../../../services/api.service';
+import { useAuthStore } from '../../../stores/authStore';
+import type { CallDirection, CallHistoryStatus, CallType } from '../../../types/callHistory';
+import type { DirectSignalingMessage, HangupReason, SocketMessage } from '../../../types/signaling';
 
-export type CallStatus =
-  | "idle"
-  | "calling"
-  | "connected"
-  | "ended"
-  | "rejected";
+export type CallStatus = 'idle' | 'calling' | 'connected' | 'ended' | 'rejected';
 
-type HangupActor = "local" | "remote";
+type HangupActor = 'local' | 'remote';
 
 const resolveHistoryStatus = (
   direction: CallDirection,
   reason: HangupReason,
   connected: boolean,
-  by: HangupActor,
+  by: HangupActor
 ): CallHistoryStatus => {
-  if (connected) return "completed";
+  if (connected) return 'completed';
 
-  if (direction === "incoming") {
-    if (by === "local" && reason === "rejected") return "rejected";
-    return "missed";
+  if (direction === 'incoming') {
+    if (by === 'local' && reason === 'rejected') return 'rejected';
+    return 'missed';
   }
 
-  if (reason === "rejected") return "rejected";
-  if (by === "local") return "failed";
-  return "missed";
+  if (reason === 'rejected') return 'rejected';
+  if (by === 'local') return 'failed';
+  return 'missed';
 };
 
 interface CallManagerOptions {
@@ -48,11 +35,9 @@ interface CallManagerOptions {
 }
 
 export const useCallManager = (options: CallManagerOptions = {}) => {
-  const [incomingCall, setIncomingCall] = useState<DirectSignalingMessage | null>(
-    null,
-  );
+  const [incomingCall, setIncomingCall] = useState<DirectSignalingMessage | null>(null);
   const [activeCallTarget, setActiveCallTarget] = useState<string | null>(null);
-  const [status, setStatus] = useState<CallStatus>("idle");
+  const [status, setStatus] = useState<CallStatus>('idle');
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
 
   const queryClient = useQueryClient();
@@ -72,9 +57,9 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   const callDirectionRef = useRef<CallDirection | null>(null);
   const callStartedAtRef = useRef<number | null>(null);
   const callConnectedAtRef = useRef<number | null>(null);
-  const callTypeRef = useRef<CallType>("audio");
+  const callTypeRef = useRef<CallType>('audio');
   const loggedRef = useRef(false);
-  const statusRef = useRef<CallStatus>("idle");
+  const statusRef = useRef<CallStatus>('idle');
 
   const { sendMessage, socket } = useSocket();
 
@@ -90,10 +75,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
 
   const getConnectedDuration = useCallback(() => {
     if (!callConnectedAtRef.current) return 0;
-    return Math.max(
-      0,
-      Math.floor((Date.now() - callConnectedAtRef.current) / 1000),
-    );
+    return Math.max(0, Math.floor((Date.now() - callConnectedAtRef.current) / 1000));
   }, []);
 
   const stopDurationTimer = useCallback(() => {
@@ -119,7 +101,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     callDirectionRef.current = null;
     callStartedAtRef.current = null;
     callConnectedAtRef.current = null;
-    callTypeRef.current = "audio";
+    callTypeRef.current = 'audio';
     loggedRef.current = false;
     setCallDurationSeconds(0);
   }, [stopDurationTimer]);
@@ -135,7 +117,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     clearHistoryRefreshTimers();
     for (const delay of [0, 800, 1800]) {
       const timerId = window.setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["call-history"] });
+        queryClient.invalidateQueries({ queryKey: ['call-history'] });
       }, delay);
       historyRefreshTimersRef.current.push(timerId);
     }
@@ -151,7 +133,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
 
       // call_history is a shared record for caller/receiver,
       // so we persist only from the outgoing side to avoid duplicates.
-      if (direction !== "outgoing") {
+      if (direction !== 'outgoing') {
         loggedRef.current = true;
         scheduleCallHistoryRefresh();
         return;
@@ -159,16 +141,9 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
 
       const endedAtMs = Date.now();
       const durationSeconds = getConnectedDuration();
-      const startedAtIso = new Date(
-        callStartedAtRef.current ?? endedAtMs,
-      ).toISOString();
+      const startedAtIso = new Date(callStartedAtRef.current ?? endedAtMs).toISOString();
       const endedAtIso = new Date(endedAtMs).toISOString();
-      const historyStatus = resolveHistoryStatus(
-        direction,
-        reason,
-        !!callConnectedAtRef.current,
-        by,
-      );
+      const historyStatus = resolveHistoryStatus(direction, reason, !!callConnectedAtRef.current, by);
 
       setCallDurationSeconds(durationSeconds);
       loggedRef.current = true;
@@ -188,16 +163,16 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
         .then(() => scheduleCallHistoryRefresh())
         .catch((error) => {
           loggedRef.current = false;
-          console.error("Failed to save call history:", error);
+          console.error('Failed to save call history:', error);
         });
     },
-    [accessToken, getConnectedDuration, scheduleCallHistoryRefresh],
+    [accessToken, getConnectedDuration, scheduleCallHistoryRefresh]
   );
 
   const clearCallUI = useCallback(() => {
     setActiveCallTarget(null);
     setIncomingCall(null);
-    setStatus("idle");
+    setStatus('idle');
     resetCallTracking();
     if (cleanupTimerRef.current) {
       window.clearTimeout(cleanupTimerRef.current);
@@ -215,10 +190,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       ringTimeoutRef.current = null;
     }
     if (ringGainRef.current && ringContextRef.current) {
-      ringGainRef.current.gain.setValueAtTime(
-        0,
-        ringContextRef.current.currentTime,
-      );
+      ringGainRef.current.gain.setValueAtTime(0, ringContextRef.current.currentTime);
     }
     ringOscillatorRef.current?.stop();
     ringOscillatorRef.current?.disconnect();
@@ -233,7 +205,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     const ctx = ringContextRef.current || new AudioContext();
     ringContextRef.current = ctx;
 
-    if (ctx.state === "suspended") {
+    if (ctx.state === 'suspended') {
       try {
         await ctx.resume();
       } catch {
@@ -243,7 +215,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
 
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = "sine";
+    osc.type = 'sine';
     osc.frequency.value = 440;
     gain.gain.value = 0;
     osc.connect(gain).connect(ctx.destination);
@@ -264,14 +236,14 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   }, []);
 
   const stopCall = useCallback(
-    (reason: HangupReason = "ended") => {
+    (reason: HangupReason = 'ended') => {
       const targetId = activeCallTargetRef.current || incomingCallRef.current?.from;
-      if (targetId) sendMessage({ type: "hangup", to: targetId, reason });
+      if (targetId) sendMessage({ type: 'hangup', to: targetId, reason });
 
       stopRingback();
       stopDurationTimer();
       cleanup();
-      persistCallHistory(reason, "local");
+      persistCallHistory(reason, 'local');
       setStatus(reason);
 
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
@@ -279,44 +251,37 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
         clearCallUI();
       }, 250);
     },
-    [
-      sendMessage,
-      cleanup,
-      clearCallUI,
-      stopRingback,
-      persistCallHistory,
-      stopDurationTimer,
-    ],
+    [sendMessage, cleanup, clearCallUI, stopRingback, persistCallHistory, stopDurationTimer]
   );
 
   const startCall = useCallback(
-    async (targetId: string, callType: CallType = "audio") => {
-      if (statusRef.current !== "idle" || activeCallTargetRef.current) {
-        console.warn("Call already in progress");
+    async (targetId: string, callType: CallType = 'audio') => {
+      if (statusRef.current !== 'idle' || activeCallTargetRef.current) {
+        console.warn('Call already in progress');
         return;
       }
       if (options.isCallBlocked) {
         options.onBlockedCall?.(targetId);
         return;
       }
-      callDirectionRef.current = "outgoing";
+      callDirectionRef.current = 'outgoing';
       callStartedAtRef.current = Date.now();
       callConnectedAtRef.current = null;
       callTypeRef.current = callType;
       loggedRef.current = false;
       setCallDurationSeconds(0);
       setIncomingCall(null);
-      setStatus("calling");
+      setStatus('calling');
       setActiveCallTarget(targetId);
       try {
         await startRingback();
         await startAudioCall(targetId);
       } catch (e) {
-        console.error("Start call error:", e);
-        stopCall("ended");
+        console.error('Start call error:', e);
+        stopCall('ended');
       }
     },
-    [startAudioCall, stopCall, startRingback, options],
+    [startAudioCall, stopCall, startRingback, options]
   );
 
   const acceptCall = useCallback(async () => {
@@ -324,21 +289,21 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     if (!pendingCall?.from || !pendingCall.offer) return;
 
     const targetId = pendingCall.from;
-    callDirectionRef.current = "incoming";
+    callDirectionRef.current = 'incoming';
     callStartedAtRef.current = callStartedAtRef.current ?? Date.now();
     callConnectedAtRef.current = Date.now();
-    callTypeRef.current = pendingCall.callType || "audio";
+    callTypeRef.current = pendingCall.callType || 'audio';
     loggedRef.current = false;
     setActiveCallTarget(targetId);
 
     try {
       await handleRemoteOffer(targetId, pendingCall.offer);
       setIncomingCall(null);
-      setStatus("connected");
+      setStatus('connected');
       startDurationTimer();
     } catch (e) {
-      console.error("Accept call error:", e);
-      stopCall("ended");
+      console.error('Accept call error:', e);
+      stopCall('ended');
     }
   }, [handleRemoteOffer, startDurationTimer, stopCall]);
 
@@ -361,66 +326,58 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       const msg: SocketMessage = JSON.parse(event.data);
 
       switch (msg.type) {
-        case "offer":
+        case 'offer':
           if (options.isCallBlocked) {
             if (msg.from) {
-              sendMessage({ type: "hangup", to: msg.from, reason: "rejected" });
+              sendMessage({ type: 'hangup', to: msg.from, reason: 'rejected' });
             }
             options.onBlockedCall?.(msg.from);
             break;
           }
-          if (
-            statusRef.current !== "idle" ||
-            activeCallTargetRef.current ||
-            incomingCallRef.current
-          ) {
+          if (statusRef.current !== 'idle' || activeCallTargetRef.current || incomingCallRef.current) {
             if (msg.from) {
-              sendMessage({ type: "hangup", to: msg.from, reason: "rejected" });
+              sendMessage({ type: 'hangup', to: msg.from, reason: 'rejected' });
             }
             break;
           }
           incomingCallRef.current = msg;
           setIncomingCall(msg);
-          callDirectionRef.current = "incoming";
+          callDirectionRef.current = 'incoming';
           callStartedAtRef.current = Date.now();
           callConnectedAtRef.current = null;
-          callTypeRef.current = msg.callType || "audio";
+          callTypeRef.current = msg.callType || 'audio';
           loggedRef.current = false;
           setCallDurationSeconds(0);
           break;
 
-        case "answer":
+        case 'answer':
           if (msg.answer) {
             stopRingback();
             await handleRemoteAnswer(msg.answer);
             callConnectedAtRef.current = Date.now();
-            setStatus("connected");
+            setStatus('connected');
             startDurationTimer();
           }
           break;
 
-        case "ice-candidate":
+        case 'ice-candidate':
           if (msg.candidate) {
             try {
-              await handleRemoteIceCandidate(
-                msg.candidate as RTCIceCandidateInit,
-              );
+              await handleRemoteIceCandidate(msg.candidate as RTCIceCandidateInit);
             } catch (e) {
-              console.error("Error adding ice candidate:", e);
+              console.error('Error adding ice candidate:', e);
             }
           }
           break;
 
-        case "hangup": {
+        case 'hangup': {
           stopDurationTimer();
           stopRingback();
           cleanup();
-          const remoteReason: HangupReason =
-            msg.reason === "rejected" ? "rejected" : "ended";
-          persistCallHistory(remoteReason, "remote");
+          const remoteReason: HangupReason = msg.reason === 'rejected' ? 'rejected' : 'ended';
+          persistCallHistory(remoteReason, 'remote');
           setStatus(remoteReason);
-          if (cleanupTimerRef.current)
-            window.clearTimeout(cleanupTimerRef.current);
+          if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
           cleanupTimerRef.current = window.setTimeout(() => {
             clearCallUI();
           }, 2500);
@@ -429,9 +386,9 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       }
     };
 
-    socket.addEventListener("message", handleMessage);
+    socket.addEventListener('message', handleMessage);
     return () => {
-      socket.removeEventListener("message", handleMessage);
+      socket.removeEventListener('message', handleMessage);
       stopRingback();
       stopDurationTimer();
       clearHistoryRefreshTimers();
@@ -453,7 +410,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   ]);
 
   useEffect(() => {
-    if (status !== "calling") stopRingback();
+    if (status !== 'calling') stopRingback();
   }, [status, stopRingback]);
 
   return {

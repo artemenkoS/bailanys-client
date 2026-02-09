@@ -1,5 +1,5 @@
-import { Button, FileInput, Group, Stack, Text } from "@mantine/core";
-import { useTranslation } from "react-i18next";
+import { Button, FileInput, Group, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 interface AvatarUploadFieldProps {
   avatarFile: File | null;
@@ -23,8 +23,8 @@ export const AvatarUploadField = ({
   return (
     <Stack gap="xs">
       <FileInput
-        label={t("profile.avatarLabel")}
-        placeholder={t("profile.avatarPlaceholder")}
+        label={t('profile.avatarLabel')}
+        placeholder={t('profile.avatarPlaceholder')}
         accept="image/*"
         value={avatarFile}
         onChange={onChange}
@@ -34,16 +34,10 @@ export const AvatarUploadField = ({
       />
       <Group justify="space-between">
         <Text size="xs" c="dimmed">
-          {t("common.imageUpTo")}
+          {t('common.imageUpTo')}
         </Text>
-        <Button
-          variant="subtle"
-          color="red"
-          size="xs"
-          onClick={onRemove}
-          disabled={disableRemove}
-        >
-          {t("common.removeAvatar")}
+        <Button variant="subtle" color="red" size="xs" onClick={onRemove} disabled={disableRemove}>
+          {t('common.removeAvatar')}
         </Button>
       </Group>
     </Stack>

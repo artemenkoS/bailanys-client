@@ -1,31 +1,18 @@
-import type {
-  RegisterData,
-  AuthResponse,
-  LoginData,
-  Profile,
-  UpdateProfileData,
-} from "../types/auth";
-import type {
-  CallHistoryItem,
-  CreateCallHistoryRequest,
-} from "../types/callHistory";
-import type { RoomOwnerSummary, RoomSummary } from "../types/rooms";
-import { useAuthStore } from "../stores/authStore";
+import type { RegisterData, AuthResponse, LoginData, Profile, UpdateProfileData } from '../types/auth';
+import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
+import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
+import { useAuthStore } from '../stores/authStore';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 class ApiService {
   private refreshPromise: Promise<AuthResponse | null> | null = null;
 
-  private async rawFetch<T>(
-    endpoint: string,
-    options?: RequestInit,
-  ): Promise<T> {
-    const isFormData =
-      typeof FormData !== "undefined" && options?.body instanceof FormData;
+  private async rawFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const isFormData = typeof FormData !== 'undefined' && options?.body instanceof FormData;
     const headers = new Headers(options?.headers);
-    if (!isFormData && !headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
+    if (!isFormData && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers,
@@ -34,7 +21,7 @@ class ApiService {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      const error = new Error(errorBody.error || "Request failed");
+      const error = new Error(errorBody.error || 'Request failed');
       (error as Error & { status?: number }).status = response.status;
       throw error;
     }
@@ -46,8 +33,8 @@ class ApiService {
     const refreshToken = useAuthStore.getState().session?.refresh_token;
     if (!refreshToken) return null;
     if (!this.refreshPromise) {
-      this.refreshPromise = this.rawFetch<AuthResponse>("/api/refresh", {
-        method: "POST",
+      this.refreshPromise = this.rawFetch<AuthResponse>('/api/refresh', {
+        method: 'POST',
         body: JSON.stringify({ refreshToken }),
       }).catch(() => null);
     }
@@ -56,83 +43,73 @@ class ApiService {
     return result;
   }
 
-  private async fetch<T>(
-    endpoint: string,
-    options?: RequestInit,
-    config?: { skipRefresh?: boolean },
-  ): Promise<T> {
-    const response = await this.rawFetch<T>(endpoint, options).catch(
-      async (error: Error & { status?: number }) => {
-        if (config?.skipRefresh) {
-          throw error;
-        }
-        if (error.status !== 401) {
-          throw error;
-        }
+  private async fetch<T>(endpoint: string, options?: RequestInit, config?: { skipRefresh?: boolean }): Promise<T> {
+    const response = await this.rawFetch<T>(endpoint, options).catch(async (error: Error & { status?: number }) => {
+      if (config?.skipRefresh) {
+        throw error;
+      }
+      if (error.status !== 401) {
+        throw error;
+      }
 
-        const headers = new Headers(options?.headers);
-        const authHeader = headers.get("Authorization") || "";
-        const hasBearer = authHeader.startsWith("Bearer ");
-        if (!hasBearer) {
-          throw error;
-        }
+      const headers = new Headers(options?.headers);
+      const authHeader = headers.get('Authorization') || '';
+      const hasBearer = authHeader.startsWith('Bearer ');
+      if (!hasBearer) {
+        throw error;
+      }
 
-        const refreshed = await this.refreshSession();
-        if (!refreshed?.session) {
-          console.log("Unauthorized access - logging out");
-          useAuthStore.getState().logout();
-          throw error;
-        }
+      const refreshed = await this.refreshSession();
+      if (!refreshed?.session) {
+        console.log('Unauthorized access - logging out');
+        useAuthStore.getState().logout();
+        throw error;
+      }
 
-        useAuthStore.getState().updateSession(refreshed.session);
-        if (refreshed.user) {
-          useAuthStore.getState().updateUser(refreshed.user);
-        }
+      useAuthStore.getState().updateSession(refreshed.session);
+      if (refreshed.user) {
+        useAuthStore.getState().updateUser(refreshed.user);
+      }
 
-        headers.set("Authorization", `Bearer ${refreshed.session.access_token}`);
-        return this.rawFetch<T>(endpoint, {
-          ...options,
-          headers,
-        });
-      },
-    );
+      headers.set('Authorization', `Bearer ${refreshed.session.access_token}`);
+      return this.rawFetch<T>(endpoint, {
+        ...options,
+        headers,
+      });
+    });
 
     return response;
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    return this.fetch<AuthResponse>("/api/register", {
-      method: "POST",
+    return this.fetch<AuthResponse>('/api/register', {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async login(data: LoginData): Promise<AuthResponse> {
-    return this.fetch<AuthResponse>("/api/login", {
-      method: "POST",
+    return this.fetch<AuthResponse>('/api/login', {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-
   async getProfile(token: string): Promise<{ profile: Profile }> {
-    return this.fetch<{ profile: Profile }>("/api/profile", {
+    return this.fetch<{ profile: Profile }>('/api/profile', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
   }
 
-  async updateProfile(
-    token: string,
-    data: UpdateProfileData,
-  ): Promise<{ profile: Profile }> {
+  async updateProfile(token: string, data: UpdateProfileData): Promise<{ profile: Profile }> {
     const hasAvatar = Boolean(data.avatarFile);
     const hasRemoval = Boolean(data.removeAvatar);
 
     if (!hasAvatar && !hasRemoval) {
-      return this.fetch<{ profile: Profile }>("/api/profile", {
-        method: "PATCH",
+      return this.fetch<{ profile: Profile }>('/api/profile', {
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -144,19 +121,19 @@ class ApiService {
     }
 
     const formData = new FormData();
-    if (data.username) formData.append("username", data.username);
+    if (data.username) formData.append('username', data.username);
     if (data.displayName !== undefined) {
-      formData.append("displayName", data.displayName ?? "");
+      formData.append('displayName', data.displayName ?? '');
     }
     if (data.avatarFile) {
-      formData.append("avatar", data.avatarFile);
+      formData.append('avatar', data.avatarFile);
     }
     if (data.removeAvatar) {
-      formData.append("removeAvatar", "true");
+      formData.append('removeAvatar', 'true');
     }
 
-    return this.fetch<{ profile: Profile }>("/api/profile", {
-      method: "PATCH",
+    return this.fetch<{ profile: Profile }>('/api/profile', {
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -165,7 +142,7 @@ class ApiService {
   }
 
   async getOnlineUsers(token: string): Promise<{ users: Profile[] }> {
-    return this.fetch<{ users: Profile[] }>("/api/users", {
+    return this.fetch<{ users: Profile[] }>('/api/users', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -173,19 +150,16 @@ class ApiService {
   }
 
   async getCallHistory(token: string): Promise<{ calls: CallHistoryItem[] }> {
-    return this.fetch<{ calls: CallHistoryItem[] }>("/api/call-history", {
+    return this.fetch<{ calls: CallHistoryItem[] }>('/api/call-history', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
   }
 
-  async createCallHistory(
-    token: string,
-    data: CreateCallHistoryRequest,
-  ): Promise<{ ok: boolean }> {
-    return this.fetch<{ ok: boolean }>("/api/call-history", {
-      method: "POST",
+  async createCallHistory(token: string, data: CreateCallHistoryRequest): Promise<{ ok: boolean }> {
+    return this.fetch<{ ok: boolean }>('/api/call-history', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -194,7 +168,7 @@ class ApiService {
   }
 
   async getRooms(token: string): Promise<{ rooms: RoomSummary[] }> {
-    return this.fetch<{ rooms: RoomSummary[] }>("/api/rooms", {
+    return this.fetch<{ rooms: RoomSummary[] }>('/api/rooms', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -202,7 +176,7 @@ class ApiService {
   }
 
   async getMyRooms(token: string): Promise<{ rooms: RoomOwnerSummary[] }> {
-    return this.fetch<{ rooms: RoomOwnerSummary[] }>("/api/rooms/mine", {
+    return this.fetch<{ rooms: RoomOwnerSummary[] }>('/api/rooms/mine', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -211,19 +185,19 @@ class ApiService {
 
   async updateRoomAvatar(
     token: string,
-    data: { roomId: string; avatarFile?: File | null; removeAvatar?: boolean },
+    data: { roomId: string; avatarFile?: File | null; removeAvatar?: boolean }
   ): Promise<{ ok: boolean; avatarUrl?: string | null }> {
     const formData = new FormData();
-    formData.append("roomId", data.roomId);
+    formData.append('roomId', data.roomId);
     if (data.avatarFile) {
-      formData.append("avatar", data.avatarFile);
+      formData.append('avatar', data.avatarFile);
     }
     if (data.removeAvatar) {
-      formData.append("removeAvatar", "true");
+      formData.append('removeAvatar', 'true');
     }
 
-    return this.fetch<{ ok: boolean; avatarUrl?: string | null }>("/api/rooms", {
-      method: "PATCH",
+    return this.fetch<{ ok: boolean; avatarUrl?: string | null }>('/api/rooms', {
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -232,8 +206,8 @@ class ApiService {
   }
 
   async deleteRoom(token: string, roomId: string): Promise<{ ok: boolean }> {
-    return this.fetch<{ ok: boolean }>("/api/rooms", {
-      method: "DELETE",
+    return this.fetch<{ ok: boolean }>('/api/rooms', {
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
       },

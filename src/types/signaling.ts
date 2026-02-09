@@ -1,8 +1,8 @@
-export type CallType = "audio" | "video";
-export type HangupReason = "ended" | "rejected";
+export type CallType = 'audio' | 'video';
+export type HangupReason = 'ended' | 'rejected';
 
 export interface DirectSignalingMessage {
-  type: "offer" | "answer" | "ice-candidate" | "hangup";
+  type: 'offer' | 'answer' | 'ice-candidate' | 'hangup';
   to: string;
   from?: string;
   callType?: CallType;
@@ -13,7 +13,7 @@ export interface DirectSignalingMessage {
 }
 
 export interface RoomJoinMessage {
-  type: "join-room";
+  type: 'join-room';
   roomId: string;
   create?: boolean;
   name?: string;
@@ -22,29 +22,29 @@ export interface RoomJoinMessage {
 }
 
 export interface RoomLeaveMessage {
-  type: "leave-room";
+  type: 'leave-room';
 }
 
 export interface RoomJoinedMessage {
-  type: "room-joined";
+  type: 'room-joined';
   roomId: string;
   users: string[];
 }
 
 export interface RoomUserJoinedMessage {
-  type: "room-user-joined";
+  type: 'room-user-joined';
   roomId: string;
   userId: string;
 }
 
 export interface RoomUserLeftMessage {
-  type: "room-user-left";
+  type: 'room-user-left';
   roomId: string;
   userId: string;
 }
 
 export interface RoomOfferMessage {
-  type: "room-offer";
+  type: 'room-offer';
   roomId: string;
   to: string;
   from?: string;
@@ -53,7 +53,7 @@ export interface RoomOfferMessage {
 }
 
 export interface RoomAnswerMessage {
-  type: "room-answer";
+  type: 'room-answer';
   roomId: string;
   to: string;
   from?: string;
@@ -61,7 +61,7 @@ export interface RoomAnswerMessage {
 }
 
 export interface RoomIceMessage {
-  type: "room-ice";
+  type: 'room-ice';
   roomId: string;
   to: string;
   from?: string;
@@ -69,7 +69,7 @@ export interface RoomIceMessage {
 }
 
 export interface ErrorMessage {
-  type: "error";
+  type: 'error';
   message: string;
 }
 

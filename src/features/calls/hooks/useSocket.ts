@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "../../../stores/authStore";
-import type { SocketMessage } from "../../../types/signaling";
+import { useEffect, useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../../../stores/authStore';
+import type { SocketMessage } from '../../../types/signaling';
 
 type SocketSubscriber = (socket: WebSocket | null) => void;
 
@@ -28,7 +28,7 @@ const clearReconnectTimeout = () => {
 
 const handleBeforeUnload = () => {
   if (sharedSocket?.readyState === WebSocket.OPEN) {
-    sharedSocket.close(1000, "Tab closed");
+    sharedSocket.close(1000, 'Tab closed');
   }
 };
 
@@ -41,10 +41,7 @@ const disconnectShared = () => {
     sharedSocket.onerror = null;
     sharedSocket.onmessage = null;
 
-    if (
-      sharedSocket.readyState === WebSocket.OPEN ||
-      sharedSocket.readyState === WebSocket.CONNECTING
-    ) {
+    if (sharedSocket.readyState === WebSocket.OPEN || sharedSocket.readyState === WebSocket.CONNECTING) {
       sharedSocket.close(1000);
     }
     sharedSocket = null;
@@ -55,48 +52,43 @@ const disconnectShared = () => {
 const connectShared = () => {
   if (
     !sharedAccessToken ||
-    (sharedSocket &&
-      (sharedSocket.readyState === WebSocket.OPEN ||
-        sharedSocket.readyState === WebSocket.CONNECTING))
+    (sharedSocket && (sharedSocket.readyState === WebSocket.OPEN || sharedSocket.readyState === WebSocket.CONNECTING))
   ) {
     return;
   }
 
-  const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws";
+  const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
   const socket = new WebSocket(`${WS_URL}?token=${sharedAccessToken}`);
   sharedSocket = socket;
 
   socket.onopen = () => {
-    console.log("WS Connected");
+    console.log('WS Connected');
     notifySubscribers();
-    sharedQueryClient?.invalidateQueries({ queryKey: ["online-users"] });
+    sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
   };
 
   socket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type === "presence-check") {
+      if (data.type === 'presence-check') {
         if (sharedSocket?.readyState === WebSocket.OPEN) {
-          sharedSocket.send(JSON.stringify({ type: "presence-pong" }));
+          sharedSocket.send(JSON.stringify({ type: 'presence-pong' }));
         }
         return;
       }
-      if (
-        data.type === "user-connected" ||
-        data.type === "user-disconnected"
-      ) {
-        sharedQueryClient?.invalidateQueries({ queryKey: ["online-users"] });
+      if (data.type === 'user-connected' || data.type === 'user-disconnected') {
+        sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
       }
-      if (data.type === "user-status") {
-        sharedQueryClient?.invalidateQueries({ queryKey: ["online-users"] });
+      if (data.type === 'user-status') {
+        sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
         if (data.userId && data.userId === sharedUserId) {
           sharedQueryClient?.invalidateQueries({
-            queryKey: ["profile", sharedAccessToken],
+            queryKey: ['profile', sharedAccessToken],
           });
         }
       }
     } catch (err) {
-      console.error("WS Message Error:", err);
+      console.error('WS Message Error:', err);
     }
   };
 
@@ -104,7 +96,7 @@ const connectShared = () => {
     console.log(`❌ WS Closed: ${event.reason}`);
     sharedSocket = null;
     notifySubscribers();
-    sharedQueryClient?.invalidateQueries({ queryKey: ["online-users"] });
+    sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
 
     if (event.code !== 1000 && sharedAccessToken && consumerCount > 0) {
       if (!reconnectTimeout) {
@@ -117,7 +109,7 @@ const connectShared = () => {
   };
 
   socket.onerror = (error) => {
-    console.error("WS Socket Error:", error);
+    console.error('WS Socket Error:', error);
   };
 };
 
@@ -127,9 +119,7 @@ export const useSocket = () => {
   const accessToken = session?.access_token;
   const userId = user?.id;
 
-  const [socketInstance, setSocketInstance] = useState<WebSocket | null>(
-    sharedSocket,
-  );
+  const [socketInstance, setSocketInstance] = useState<WebSocket | null>(sharedSocket);
 
   const disconnect = useCallback(() => {
     disconnectShared();
@@ -169,14 +159,14 @@ export const useSocket = () => {
     if (sharedSocket?.readyState === WebSocket.OPEN) {
       sharedSocket.send(JSON.stringify(message));
     } else {
-      console.warn("WS: Cannot send message, socket is not open");
+      console.warn('WS: Cannot send message, socket is not open');
     }
   }, []);
 
   useEffect(() => {
     consumerCount += 1;
     if (consumerCount === 1) {
-      window.addEventListener("beforeunload", handleBeforeUnload);
+      window.addEventListener('beforeunload', handleBeforeUnload);
     }
 
     if (sharedAccessToken) {
@@ -186,7 +176,7 @@ export const useSocket = () => {
     return () => {
       consumerCount = Math.max(0, consumerCount - 1);
       if (consumerCount === 0) {
-        window.removeEventListener("beforeunload", handleBeforeUnload);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         disconnectShared();
       }
     };

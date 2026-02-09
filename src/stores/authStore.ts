@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { Session, User } from "../types/auth";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { Session, User } from '../types/auth';
 
 interface AuthState {
   user: User | null;
@@ -10,7 +10,7 @@ interface AuthState {
   logout: () => void;
   updateSession: (session: Session) => void;
   updateUser: (user: User) => void;
-  updateUserMetadata: (metadata: Partial<User["user_metadata"]>) => void;
+  updateUserMetadata: (metadata: Partial<User['user_metadata']>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: "auth-storage",
-    },
-  ),
+      name: 'auth-storage',
+    }
+  )
 );

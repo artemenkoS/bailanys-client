@@ -1,5 +1,5 @@
-import { Button, Group, Modal, PasswordInput, Stack, Text } from "@mantine/core";
-import { useTranslation } from "react-i18next";
+import { Button, Group, Modal, PasswordInput, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 interface RoomPasswordModalProps {
   opened: boolean;
@@ -25,23 +25,17 @@ export const RoomPasswordModal = ({
   disabled,
 }: RoomPasswordModalProps) => {
   const { t } = useTranslation();
-  const showServerError =
-    serverErrorKey && serverErrorKey !== passwordErrorKey;
+  const showServerError = serverErrorKey && serverErrorKey !== passwordErrorKey;
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onCancel}
-      title={t("rooms.passwordModalTitle")}
-      centered
-    >
+    <Modal opened={opened} onClose={onCancel} title={t('rooms.passwordModalTitle')} centered>
       <Stack gap="sm">
         <Text size="sm" fw={600}>
-          {roomName ?? ""}
+          {roomName ?? ''}
         </Text>
         <PasswordInput
-          label={t("rooms.passwordLabel")}
-          placeholder={t("rooms.passwordPlaceholder")}
+          label={t('rooms.passwordLabel')}
+          placeholder={t('rooms.passwordPlaceholder')}
           value={password}
           onChange={(e) => onPasswordChange(e.currentTarget.value)}
           error={passwordErrorKey ? t(passwordErrorKey) : undefined}
@@ -54,10 +48,10 @@ export const RoomPasswordModal = ({
         )}
         <Group justify="flex-end">
           <Button variant="subtle" onClick={onCancel}>
-            {t("common.cancel")}
+            {t('common.cancel')}
           </Button>
           <Button onClick={onSubmit} disabled={disabled}>
-            {t("rooms.join")}
+            {t('rooms.join')}
           </Button>
         </Group>
       </Stack>

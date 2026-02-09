@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
 
@@ -13,16 +13,14 @@ interface UseAvatarStateResult {
   handleRemoveAvatar: () => void;
 }
 
-export const useAvatarState = (
-  initialAvatarUrl?: string | null,
-): UseAvatarStateResult => {
+export const useAvatarState = (initialAvatarUrl?: string | null): UseAvatarStateResult => {
   const { t } = useTranslation();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const avatarObjectUrl = useMemo(() => {
-    if (!avatarFile) return "";
+    if (!avatarFile) return '';
     return URL.createObjectURL(avatarFile);
   }, [avatarFile]);
 
@@ -38,14 +36,14 @@ export const useAvatarState = (
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      setAvatarError(t("profile.onlyImages"));
+    if (!file.type.startsWith('image/')) {
+      setAvatarError(t('profile.onlyImages'));
       setAvatarFile(null);
       return;
     }
 
     if (file.size > MAX_AVATAR_SIZE_BYTES) {
-      setAvatarError(t("profile.maxFileSize"));
+      setAvatarError(t('profile.maxFileSize'));
       setAvatarFile(null);
       return;
     }
@@ -62,11 +60,7 @@ export const useAvatarState = (
   };
 
   const avatarSrc =
-    avatarFile && avatarObjectUrl
-      ? avatarObjectUrl
-      : avatarRemoved
-        ? undefined
-        : initialAvatarUrl || undefined;
+    avatarFile && avatarObjectUrl ? avatarObjectUrl : avatarRemoved ? undefined : initialAvatarUrl || undefined;
 
   return {
     avatarFile,

@@ -1,10 +1,6 @@
-export type CallDirection = "incoming" | "outgoing";
-export type CallHistoryStatus =
-  | "completed"
-  | "missed"
-  | "rejected"
-  | "failed";
-export type CallType = "audio" | "video";
+export type CallDirection = 'incoming' | 'outgoing';
+export type CallHistoryStatus = 'completed' | 'missed' | 'rejected' | 'failed';
+export type CallType = 'audio' | 'video';
 
 export interface CallHistoryPeer {
   id: string;

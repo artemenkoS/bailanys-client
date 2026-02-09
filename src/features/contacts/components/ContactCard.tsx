@@ -1,43 +1,33 @@
-import {
-  Card,
-  Group,
-  Avatar,
-  Text,
-  Badge,
-  Button,
-  Tooltip,
-  ActionIcon,
-  rem,
-} from "@mantine/core";
-import { IconVideo, IconPhone } from "@tabler/icons-react";
-import type { Profile } from "../../../types/auth";
-import { useTranslation } from "react-i18next";
+import { Card, Group, Avatar, Text, Badge, Button, Tooltip, ActionIcon, rem } from '@mantine/core';
+import { IconVideo, IconPhone } from '@tabler/icons-react';
+import type { Profile } from '../../../types/auth';
+import { useTranslation } from 'react-i18next';
 
 interface ContactCardProps {
   user: Profile;
-  onStartCall: (targetUserId: string, type: "video" | "audio") => void;
+  onStartCall: (targetUserId: string, type: 'video' | 'audio') => void;
 }
 
 export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
   const { t } = useTranslation();
   const displayName = user.display_name || user.username;
   const statusLabel =
-    user.status === "in-call"
-      ? t("common.inCall")
-      : user.status === "busy"
-        ? t("common.busy")
-        : user.status === "offline"
-          ? t("common.offline")
-          : t("common.online");
+    user.status === 'in-call'
+      ? t('common.inCall')
+      : user.status === 'busy'
+        ? t('common.busy')
+        : user.status === 'offline'
+          ? t('common.offline')
+          : t('common.online');
   const statusColor =
-    user.status === "in-call"
-      ? "red"
-      : user.status === "busy"
-        ? "yellow"
-        : user.status === "offline"
-          ? "gray"
-          : "green";
-  const canCall = user.status === "online";
+    user.status === 'in-call'
+      ? 'red'
+      : user.status === 'busy'
+        ? 'yellow'
+        : user.status === 'offline'
+          ? 'gray'
+          : 'green';
+  const canCall = user.status === 'online';
 
   return (
     <Card
@@ -46,28 +36,22 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
       radius="lg"
       withBorder
       style={{
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "var(--mantine-shadow-md)";
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "var(--mantine-shadow-sm)";
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
       }}
     >
       <Group mb="xl" wrap="nowrap">
-        <Avatar
-          src={user.avatar_url}
-          size="xl"
-          radius="md"
-          color="indigo"
-          variant="light"
-        >
+        <Avatar src={user.avatar_url} size="xl" radius="md" color="indigo" variant="light">
           {user.username[0].toUpperCase()}
         </Avatar>
-        <div style={{ flex: 1, overflow: "hidden" }}>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
           <Text fw={700} size="lg" truncate="end">
             {displayName}
           </Text>
@@ -87,23 +71,19 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
           style={{ flex: 1 }}
           leftSection={<IconVideo size={18} />}
           radius="md"
-          onClick={() => onStartCall(user.id, "video")}
+          onClick={() => onStartCall(user.id, 'video')}
           disabled
         >
-          {t("common.videoCall")}
+          {t('common.videoCall')}
         </Button>
 
-        <Tooltip
-          label={canCall ? t("common.audioCall") : statusLabel}
-          withArrow
-          position="bottom"
-        >
+        <Tooltip label={canCall ? t('common.audioCall') : statusLabel} withArrow position="bottom">
           <ActionIcon
             variant="light"
             color="indigo"
             size={rem(42)}
             radius="md"
-            onClick={() => onStartCall(user.id, "audio")}
+            onClick={() => onStartCall(user.id, 'audio')}
             disabled={!canCall}
           >
             <IconPhone size={20} />

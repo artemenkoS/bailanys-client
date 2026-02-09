@@ -1,5 +1,5 @@
-import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { useTranslation } from "react-i18next";
+import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 interface RoomDeleteConfirmModalProps {
   opened: boolean;
@@ -19,17 +19,15 @@ export const RoomDeleteConfirmModal = ({
   const { t } = useTranslation();
 
   return (
-    <Modal opened={opened} onClose={onCancel} title={t("rooms.delete")} centered>
+    <Modal opened={opened} onClose={onCancel} title={t('rooms.delete')} centered>
       <Stack gap="sm">
-        <Text size="sm">
-          {t("rooms.deleteConfirm", { name: roomName ?? "" })}
-        </Text>
+        <Text size="sm">{t('rooms.deleteConfirm', { name: roomName ?? '' })}</Text>
         <Group justify="flex-end">
           <Button variant="subtle" onClick={onCancel}>
-            {t("common.cancel")}
+            {t('common.cancel')}
           </Button>
           <Button color="red" onClick={onConfirm} loading={loading}>
-            {t("rooms.delete")}
+            {t('rooms.delete')}
           </Button>
         </Group>
       </Stack>

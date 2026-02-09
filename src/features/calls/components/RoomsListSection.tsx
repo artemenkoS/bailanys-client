@@ -1,17 +1,7 @@
-import {
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  FileButton,
-  Group,
-  Loader,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { IconDoorEnter } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
-import type { RoomOwnerSummary, RoomSummary } from "../../../types/rooms";
+import { Avatar, Badge, Button, Card, FileButton, Group, Loader, Stack, Text } from '@mantine/core';
+import { IconDoorEnter } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import type { RoomOwnerSummary, RoomSummary } from '../../../types/rooms';
 
 interface RoomsListSectionProps<T extends RoomSummary> {
   title: string;
@@ -54,7 +44,7 @@ const RoomCard = ({
   showInactiveBadge?: boolean;
 }) => {
   const { t } = useTranslation();
-  const isOwnerRoom = "isActive" in room;
+  const isOwnerRoom = 'isActive' in room;
   const isInactive = showInactiveBadge && isOwnerRoom && !room.isActive;
   const showDelete = Boolean(onDelete);
   const showAvatarActions = Boolean(onAvatarChange) && isOwnerRoom;
@@ -78,7 +68,7 @@ const RoomCard = ({
             disabled={isActionDisabled || isAvatarUpdating}
             loading={isAvatarUpdating}
           >
-            {t("rooms.avatarChange")}
+            {t('rooms.avatarChange')}
           </Button>
         )}
       </FileButton>
@@ -91,7 +81,7 @@ const RoomCard = ({
           disabled={isActionDisabled || isAvatarUpdating}
           loading={isAvatarUpdating}
         >
-          {t("common.removeAvatar")}
+          {t('common.removeAvatar')}
         </Button>
       )}
     </>
@@ -106,7 +96,7 @@ const RoomCard = ({
         disabled={isActionDisabled}
         fullWidth
       >
-        {t("rooms.join")}
+        {t('rooms.join')}
       </Button>
       {showDelete && (
         <Button
@@ -118,7 +108,7 @@ const RoomCard = ({
           disabled={isActionDisabled}
           fullWidth
         >
-          {t("rooms.delete")}
+          {t('rooms.delete')}
         </Button>
       )}
       {avatarActions}
@@ -131,7 +121,7 @@ const RoomCard = ({
         onClick={() => onJoin(room)}
         disabled={isActionDisabled}
       >
-        {t("rooms.join")}
+        {t('rooms.join')}
       </Button>
       {showDelete && (
         <Button
@@ -142,7 +132,7 @@ const RoomCard = ({
           loading={deleteRoomId === room.id}
           disabled={isActionDisabled}
         >
-          {t("rooms.delete")}
+          {t('rooms.delete')}
         </Button>
       )}
       {avatarActions}
@@ -153,13 +143,8 @@ const RoomCard = ({
     <Card key={room.id} withBorder radius="md" p="sm">
       <Group justify="space-between" align="center" wrap="wrap">
         <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          <Avatar
-            size="md"
-            radius="md"
-            src={room.avatarUrl || undefined}
-            color="indigo"
-          >
-            {room.name?.[0]?.toUpperCase() ?? "#"}
+          <Avatar size="md" radius="md" src={room.avatarUrl || undefined} color="indigo">
+            {room.name?.[0]?.toUpperCase() ?? '#'}
           </Avatar>
           <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
             <Group gap="xs" wrap="wrap">
@@ -168,21 +153,21 @@ const RoomCard = ({
               </Text>
               {room.isPrivate ? (
                 <Badge color="red" variant="light">
-                  {t("rooms.privateBadge")}
+                  {t('rooms.privateBadge')}
                 </Badge>
               ) : (
                 <Badge color="green" variant="light">
-                  {t("rooms.publicBadge")}
+                  {t('rooms.publicBadge')}
                 </Badge>
               )}
               {isInactive && (
                 <Badge color="gray" variant="light">
-                  {t("rooms.inactiveBadge")}
+                  {t('rooms.inactiveBadge')}
                 </Badge>
               )}
             </Group>
             <Text size="xs" c="dimmed">
-              {t("rooms.participants", { count: room.participants })}
+              {t('rooms.participants', { count: room.participants })}
             </Text>
           </Stack>
         </Group>
@@ -220,7 +205,7 @@ export const RoomsListSection = <T extends RoomSummary>({
       </Group>
       {isError ? (
         <Text size="sm" c="red">
-          {t("rooms.errors.loadFailed")}
+          {t('rooms.errors.loadFailed')}
         </Text>
       ) : rooms.length === 0 ? (
         <Text size="sm" c="dimmed">
