@@ -11,23 +11,14 @@ import type {
   SocketMessage,
 } from '../../../types/signaling';
 import { useSocket } from './useSocket';
-
-const RTC_CONFIGURATION: RTCConfiguration = {
-  iceServers: [
-    {
-      urls: ['turns:194.32.140.234.sslip.io:5349?transport=tcp', 'turn:194.32.140.234:3478?transport=udp'],
-      username: 'bailanys',
-      credential: 'Astana20206!',
-    },
-  ],
-  iceTransportPolicy: 'relay',
-};
+import { useRtcConfiguration } from './useRtcConfiguration';
 
 export type RoomCallStatus = 'idle' | 'joining' | 'joined';
 
 export const useRoomCallManager = () => {
   const { sendMessage, socket } = useSocket();
   const userId = useAuthStore((state) => state.user?.id);
+  const { getRtcConfiguration } = useRtcConfiguration();
 
   const [status, setStatus] = useState<RoomCallStatus>('idle');
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -124,11 +115,15 @@ export const useRoomCallManager = () => {
   }, []);
 
   const createPeerConnection = useCallback(
-    (peerId: string) => {
+    async (peerId: string) => {
       const existing = peerConnectionsRef.current.get(peerId);
       if (existing) return existing;
 
-      const peer = new RTCPeerConnection(RTC_CONFIGURATION);
+      const config = await getRtcConfiguration();
+      const existingAfter = peerConnectionsRef.current.get(peerId);
+      if (existingAfter) return existingAfter;
+
+      const peer = new RTCPeerConnection(config);
       peerConnectionsRef.current.set(peerId, peer);
 
       peer.onicecandidate = (event) => {
@@ -152,7 +147,7 @@ export const useRoomCallManager = () => {
 
       return peer;
     },
-    [ensureRemoteAudio, sendMessage]
+    [ensureRemoteAudio, sendMessage, getRtcConfiguration]
   );
 
   const cleanupPeer = useCallback(
@@ -189,7 +184,7 @@ export const useRoomCallManager = () => {
 
   const sendOfferToPeer = useCallback(
     async (peerId: string, currentRoomId: string) => {
-      const peer = createPeerConnection(peerId);
+      const peer = await createPeerConnection(peerId);
       await ensureLocalStream();
       await attachLocalAudio(peer);
       await applyLowLatencySender(peer);
@@ -211,7 +206,7 @@ export const useRoomCallManager = () => {
   const handleRoomOffer = useCallback(
     async (msg: RoomOfferMessage) => {
       if (!msg.from) return;
-      const peer = createPeerConnection(msg.from);
+      const peer = await createPeerConnection(msg.from);
 
       await peer.setRemoteDescription(msg.offer);
       await ensureLocalStream();

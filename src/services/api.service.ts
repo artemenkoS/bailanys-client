@@ -103,6 +103,14 @@ class ApiService {
     });
   }
 
+  async getIceServers(token: string): Promise<{ iceServers: RTCIceServer[]; ttlSeconds?: number }> {
+    return this.fetch<{ iceServers: RTCIceServer[]; ttlSeconds?: number }>('/api/ice-servers', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
   async updateProfile(token: string, data: UpdateProfileData): Promise<{ profile: Profile }> {
     const hasAvatar = Boolean(data.avatarFile);
     const hasRemoval = Boolean(data.removeAvatar);

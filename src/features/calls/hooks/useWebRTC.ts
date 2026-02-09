@@ -1,22 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { SignalingMessage } from '../../../types/signaling';
-
-const RTC_CONFIGURATION: RTCConfiguration = {
-  iceServers: [
-    {
-      urls: ['turns:194.32.140.234.sslip.io:5349?transport=tcp', 'turn:194.32.140.234:3478?transport=udp'],
-      username: 'bailanys',
-      credential: 'Astana20206!',
-    },
-  ],
-  iceTransportPolicy: 'relay',
-};
+import { useRtcConfiguration } from './useRtcConfiguration';
 
 export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
   const [isCalling, setIsCalling] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
 
+  const { getRtcConfiguration } = useRtcConfiguration();
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
@@ -89,8 +80,9 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
   }, []);
 
   const initPeerConnection = useCallback(
-    (targetId: string, createLocalAudioTransceiver = false) => {
-      const peer = new RTCPeerConnection(RTC_CONFIGURATION);
+    async (targetId: string, createLocalAudioTransceiver = false) => {
+      const config = await getRtcConfiguration();
+      const peer = new RTCPeerConnection(config);
       pc.current = peer;
 
       if (createLocalAudioTransceiver) {
@@ -118,7 +110,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
 
       return peer;
     },
-    [sendMessage, ensureRemoteAudio]
+    [sendMessage, ensureRemoteAudio, getRtcConfiguration]
   );
 
   const attachLocalAudio = useCallback(async (peer: RTCPeerConnection, stream: MediaStream) => {
@@ -140,7 +132,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
   const startAudioCall = useCallback(
     async (targetId: string) => {
       setIsCalling(true);
-      const peer = initPeerConnection(targetId, true);
+      const peer = await initPeerConnection(targetId, true);
 
       localStream.current = await getMicStream();
       applyMuteState(localStream.current, isMicMutedRef.current);
@@ -164,7 +156,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
 
   const handleRemoteOffer = useCallback(
     async (from: string, offer: RTCSessionDescriptionInit) => {
-      const peer = initPeerConnection(from);
+      const peer = await initPeerConnection(from);
 
       await peer.setRemoteDescription(offer);
       const remoteAudio = peer.getTransceivers().find((t) => t.receiver?.track?.kind === 'audio');
