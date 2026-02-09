@@ -6,12 +6,14 @@ import { useAvatarState } from "../hooks/useAvatarState";
 import { useProfile } from "../hooks/useProfile";
 import { AvatarUploadField } from "./AvatarUploadField";
 import { ProfilePreview } from "./ProfilePreview";
+import { useTranslation } from "react-i18next";
 
 interface ProfileEditFormProps {
   onClose: () => void;
 }
 
 export const ProfileEditForm = ({ onClose }: ProfileEditFormProps) => {
+  const { t } = useTranslation();
   const { updateProfileAsync, isUpdatingProfile, profile } = useProfile();
   const {
     avatarFile,
@@ -30,9 +32,9 @@ export const ProfileEditForm = ({ onClose }: ProfileEditFormProps) => {
     },
     validate: {
       username: (value) => {
-        if (!value.trim()) return "Username is required";
+        if (!value.trim()) return t("profile.usernameRequired");
         if (value.trim().length < 4) {
-          return "Username must be at least 4 characters";
+          return t("auth.usernameTooShort");
         }
         return null;
       },
@@ -95,14 +97,14 @@ export const ProfileEditForm = ({ onClose }: ProfileEditFormProps) => {
 
         <TextInput
           withAsterisk
-          label="Username"
-          placeholder="username"
+          label={t("profile.usernameLabel")}
+          placeholder={t("profile.usernamePlaceholder")}
           {...form.getInputProps("username")}
         />
 
         <TextInput
-          label="Display name"
-          placeholder="Your name"
+          label={t("profile.displayNameLabel")}
+          placeholder={t("profile.displayNamePlaceholder")}
           {...form.getInputProps("displayName")}
         />
 
@@ -117,14 +119,14 @@ export const ProfileEditForm = ({ onClose }: ProfileEditFormProps) => {
 
         <Group justify="flex-end">
           <Button variant="subtle" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="submit"
             loading={isUpdatingProfile}
             disabled={isUnchanged}
           >
-            Save changes
+            {t("common.saveChanges")}
           </Button>
         </Group>
       </Stack>

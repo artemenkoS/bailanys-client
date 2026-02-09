@@ -1,5 +1,6 @@
 import { Modal } from "@mantine/core";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useProfile } from "../hooks/useProfile";
 import { ProfileEditForm } from "./ProfileEditForm";
 
@@ -13,6 +14,7 @@ export const ProfileEditModal = ({
   onClose,
 }: ProfileEditModalProps) => {
   const { profile } = useProfile();
+  const { t } = useTranslation();
 
   const profileKey = useMemo(
     () =>
@@ -31,7 +33,7 @@ export const ProfileEditModal = ({
   );
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Edit Profile" centered>
+    <Modal opened={opened} onClose={onClose} title={t("profile.editTitle")} centered>
       {opened && <ProfileEditForm key={profileKey} onClose={onClose} />}
     </Modal>
   );

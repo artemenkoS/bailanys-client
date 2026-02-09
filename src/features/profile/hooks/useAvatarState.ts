@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
 
@@ -15,6 +16,7 @@ interface UseAvatarStateResult {
 export const useAvatarState = (
   initialAvatarUrl?: string | null,
 ): UseAvatarStateResult => {
+  const { t } = useTranslation();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -36,8 +38,14 @@ export const useAvatarState = (
       return;
     }
 
+    if (!file.type.startsWith("image/")) {
+      setAvatarError(t("profile.onlyImages"));
+      setAvatarFile(null);
+      return;
+    }
+
     if (file.size > MAX_AVATAR_SIZE_BYTES) {
-      setAvatarError("Max file size is 2MB");
+      setAvatarError(t("profile.maxFileSize"));
       setAvatarFile(null);
       return;
     }

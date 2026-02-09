@@ -14,6 +14,7 @@ import { IconPhone, IconPhoneOff, IconCheck, IconX } from "@tabler/icons-react";
 import type { SignalingMessage } from "../../../types/signaling";
 import type { CallStatus } from "../hooks/useCallManager";
 import { MuteMicButton } from "./MuteMicButton";
+import { useTranslation } from "react-i18next";
 
 interface CallOverlayProps {
   incomingCall: SignalingMessage | null;
@@ -38,6 +39,7 @@ export const CallOverlay = ({
   onHangup,
   onToggleMute,
 }: CallOverlayProps) => {
+  const { t } = useTranslation();
   const isEnded = status === "ended";
   const isRejected = status === "rejected";
   const isCalling = status === "calling";
@@ -60,10 +62,10 @@ export const CallOverlay = ({
   };
 
   const getStatusLabel = () => {
-    if (isEnded) return "Call Ended";
-    if (isRejected) return "Call Rejected";
-    if (isCalling) return "Calling...";
-    return "In Call";
+    if (isEnded) return t("calls.callEnded");
+    if (isRejected) return t("calls.callRejected");
+    if (isCalling) return t("calls.calling");
+    return t("calls.inCall");
   };
 
   return (
@@ -71,7 +73,7 @@ export const CallOverlay = ({
       <Modal
         opened={!!incomingCall && status === "idle"}
         onClose={onReject}
-        title="Incoming Audio Call"
+        title={t("calls.incomingAudio")}
         centered
         withCloseButton={false}
         closeOnClickOutside={false}
@@ -89,7 +91,9 @@ export const CallOverlay = ({
             </Avatar>
           </Box>
           <Text fw={700} size="lg" ta="center">
-            {incomingCall?.from?.slice(0, 8)} is calling...
+            {t("calls.callingFrom", {
+              user: incomingCall?.from?.slice(0, 8) ?? "",
+            })}
           </Text>
           <Group mt="lg" grow style={{ width: "100%" }}>
             <Button
@@ -99,7 +103,7 @@ export const CallOverlay = ({
               onClick={onAccept}
               radius="md"
             >
-              Accept
+              {t("calls.accept")}
             </Button>
             <Button
               color="red"
@@ -109,7 +113,7 @@ export const CallOverlay = ({
               onClick={onReject}
               radius="md"
             >
-              Reject
+              {t("calls.reject")}
             </Button>
           </Group>
         </Stack>
@@ -156,7 +160,7 @@ export const CallOverlay = ({
                   {getStatusLabel()}
                 </Text>
                 <Text size="sm" fw={600} truncate>
-                  User {activeCallTarget.slice(0, 12)}
+                  {t("calls.userLabel", { id: activeCallTarget.slice(0, 12) })}
                 </Text>
                 {showDuration && (
                   <Text size="xs" c="dimmed" mt={2}>

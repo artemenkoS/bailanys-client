@@ -11,6 +11,7 @@ import {
 import { IconUsers } from "@tabler/icons-react";
 import { ContactCard } from "./ContactCard";
 import type { Profile } from "../../../types/auth";
+import { useTranslation } from "react-i18next";
 
 interface ContactListProps {
   users: Profile[] | null;
@@ -25,11 +26,12 @@ export const ContactList = ({
   isError,
   onStartCall,
 }: ContactListProps) => {
+  const { t } = useTranslation();
   return (
     <Container size="xl" px={{ base: "xs", sm: "md" }}>
       <Stack gap="xl" mt="md">
         <Title order={2} fw={800} style={{ fontSize: rem(24) }}>
-          Contacts
+          {t("contacts.title")}
         </Title>
 
         {isLoading ? (
@@ -39,7 +41,7 @@ export const ContactList = ({
         ) : isError ? (
           <Center h={200}>
             <Text c="red" fw={500}>
-              Connection error. Please try again later.
+              {t("contacts.connectionError")}
             </Text>
           </Center>
         ) : users && users.length > 0 ? (
@@ -52,7 +54,7 @@ export const ContactList = ({
           <Center h={300}>
             <Stack align="center" gap="xs">
               <IconUsers size={48} color="var(--mantine-color-gray-4)" />
-              <Text c="dimmed">No one else is online right now.</Text>
+              <Text c="dimmed">{t("contacts.empty")}</Text>
             </Stack>
           </Center>
         )}

@@ -3,8 +3,10 @@ import { notifications } from "@mantine/notifications";
 import { apiService } from "../../../services/api.service";
 import { useAuthStore } from "../../../stores/authStore";
 import type { UpdateProfileData } from "../../../types/auth";
+import { useTranslation } from "react-i18next";
 
 export const useProfile = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { session, isAuthenticated, updateUserMetadata } = useAuthStore();
 
@@ -44,15 +46,15 @@ export const useProfile = () => {
       );
 
       notifications.show({
-        title: "Saved",
-        message: "Profile updated!",
+        title: t("notifications.savedTitle"),
+        message: t("notifications.profileUpdated"),
         color: "green",
       });
     },
     onError: (error: Error) => {
       notifications.show({
-        title: "Error",
-        message: error.message || "Profile update failed",
+        title: t("notifications.error"),
+        message: error.message || t("notifications.profileUpdateFailed"),
         color: "red",
       });
     },

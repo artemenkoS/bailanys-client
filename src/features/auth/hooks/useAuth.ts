@@ -3,8 +3,10 @@ import { apiService } from "../../../services/api.service";
 import { useAuthStore } from "../../../stores/authStore";
 import type { RegisterData, LoginData } from "../../../types/auth";
 import { notifications } from "@mantine/notifications";
+import { useTranslation } from "react-i18next";
 
 export const useAuth = () => {
+  const { t } = useTranslation();
   const {
     user,
     session,
@@ -19,16 +21,16 @@ export const useAuth = () => {
       if (response.session && response.user) {
         setAuth(response.user, response.session);
         notifications.show({
-          title: "Success",
-          message: "Registration successful!",
+          title: t("notifications.success"),
+          message: t("notifications.registrationSuccess"),
           color: "green",
         });
       }
     },
     onError: (error: Error) => {
       notifications.show({
-        title: "Error",
-        message: error.message || "Registration failed",
+        title: t("notifications.error"),
+        message: error.message || t("notifications.registrationFailed"),
         color: "red",
       });
     },
@@ -40,16 +42,16 @@ export const useAuth = () => {
       if (response.session && response.user) {
         setAuth(response.user, response.session);
         notifications.show({
-          title: "Success",
-          message: "Login successful!",
+          title: t("notifications.success"),
+          message: t("notifications.loginSuccess"),
           color: "green",
         });
       }
     },
     onError: (error: Error) => {
       notifications.show({
-        title: "Error",
-        message: error.message || "Login failed",
+        title: t("notifications.error"),
+        message: error.message || t("notifications.loginFailed"),
         color: "red",
       });
     },
@@ -58,8 +60,8 @@ export const useAuth = () => {
   const logout = () => {
     logoutStore();
     notifications.show({
-      title: "Logged out",
-      message: "You have been logged out",
+      title: t("notifications.loggedOutTitle"),
+      message: t("notifications.loggedOutMessage"),
       color: "blue",
     });
   };

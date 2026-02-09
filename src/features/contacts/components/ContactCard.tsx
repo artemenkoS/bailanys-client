@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { IconVideo, IconPhone } from "@tabler/icons-react";
 import type { Profile } from "../../../types/auth";
+import { useTranslation } from "react-i18next";
 
 interface ContactCardProps {
   user: Profile;
@@ -18,15 +19,16 @@ interface ContactCardProps {
 }
 
 export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
+  const { t } = useTranslation();
   const displayName = user.display_name || user.username;
   const statusLabel =
     user.status === "in-call"
-      ? "in call"
+      ? t("common.inCall")
       : user.status === "busy"
-        ? "busy"
+        ? t("common.busy")
         : user.status === "offline"
-          ? "offline"
-          : "online";
+          ? t("common.offline")
+          : t("common.online");
   const statusColor =
     user.status === "in-call"
       ? "red"
@@ -88,11 +90,11 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
           onClick={() => onStartCall(user.id, "video")}
           disabled
         >
-          Video Call
+          {t("common.videoCall")}
         </Button>
 
         <Tooltip
-          label={canCall ? "Audio Call" : "User is busy"}
+          label={canCall ? t("common.audioCall") : statusLabel}
           withArrow
           position="bottom"
         >

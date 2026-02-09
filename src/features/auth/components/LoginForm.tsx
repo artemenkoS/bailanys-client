@@ -1,13 +1,23 @@
-import { Button, Flex, TextInput, Typography, Stack } from "@mantine/core";
+import {
+  Button,
+  Flex,
+  TextInput,
+  Typography,
+  Stack,
+  Group,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
 
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
 
 export const LoginForm = () => {
   const { login, isLoggingIn, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const form = useForm({
     initialValues: {
@@ -16,9 +26,10 @@ export const LoginForm = () => {
     },
 
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      email: (value) =>
+        /^\S+@\S+$/.test(value) ? null : t("auth.invalidEmail"),
       password: (value) =>
-        value.length < 6 ? "Password must be at least 6 characters" : null,
+        value.length < 6 ? t("auth.passwordTooShort") : null,
     },
   });
 
@@ -43,26 +54,26 @@ export const LoginForm = () => {
       <form onSubmit={handleSubmit} style={{ width: 350 }}>
         <Stack gap="md">
           <Typography variant="h4" style={{ marginBottom: 16 }}>
-            Login
+            {t("auth.loginTitle")}
           </Typography>
 
           <TextInput
             withAsterisk
-            label="Email"
-            placeholder="your@email.com"
+            label={t("auth.email")}
+            placeholder={t("auth.emailPlaceholder")}
             {...form.getInputProps("email")}
           />
 
           <TextInput
             withAsterisk
-            label="Password"
+            label={t("auth.password")}
             type="password"
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             {...form.getInputProps("password")}
           />
 
           <Button type="submit" fullWidth loading={isLoggingIn} mt="md">
-            Login
+            {t("auth.loginButton")}
           </Button>
 
           <Button
@@ -70,8 +81,11 @@ export const LoginForm = () => {
             fullWidth
             onClick={() => navigate("/register")}
           >
-            Don't have an account? Register
+            {t("auth.gotoRegister")}
           </Button>
+          <Group justify="center">
+            <LanguageSwitcher size="sm" />
+          </Group>
         </Stack>
       </form>
     </Flex>

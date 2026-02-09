@@ -1,12 +1,22 @@
-import { Button, Flex, TextInput, Typography, Stack } from "@mantine/core";
+import {
+  Button,
+  Flex,
+  TextInput,
+  Typography,
+  Stack,
+  Group,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
 
 export const RegisterForm = () => {
   const { register, isRegistering, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const form = useForm({
     initialValues: {
@@ -17,13 +27,14 @@ export const RegisterForm = () => {
     },
 
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      email: (value) =>
+        /^\S+@\S+$/.test(value) ? null : t("auth.invalidEmail"),
       username: (value) =>
-        value.length < 4 ? "Username must be at least 4 characters" : null,
+        value.length < 4 ? t("auth.usernameTooShort") : null,
       password: (value) =>
-        value.length < 6 ? "Password must be at least 6 characters" : null,
+        value.length < 6 ? t("auth.passwordTooShort") : null,
       confirmPassword: (value, values) =>
-        value !== values.password ? "Passwords do not match" : null,
+        value !== values.password ? t("auth.passwordsNotMatch") : null,
     },
   });
 
@@ -53,45 +64,48 @@ export const RegisterForm = () => {
       <form onSubmit={handleSubmit} style={{ width: 350 }}>
         <Stack gap="md">
           <Typography variant="h4" style={{ marginBottom: 16 }}>
-            Register
+            {t("auth.registerTitle")}
           </Typography>
 
           <TextInput
             withAsterisk
-            label="Email"
-            placeholder="your@email.com"
+            label={t("auth.email")}
+            placeholder={t("auth.emailPlaceholder")}
             {...form.getInputProps("email")}
           />
 
           <TextInput
             withAsterisk
-            label="Username"
-            placeholder="username"
+            label={t("auth.username")}
+            placeholder={t("auth.usernamePlaceholder")}
             {...form.getInputProps("username")}
           />
 
           <TextInput
             withAsterisk
-            label="Password"
+            label={t("auth.password")}
             type="password"
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             {...form.getInputProps("password")}
           />
 
           <TextInput
             withAsterisk
-            label="Confirm Password"
+            label={t("auth.confirmPassword")}
             type="password"
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             {...form.getInputProps("confirmPassword")}
           />
 
           <Button type="submit" fullWidth loading={isRegistering} mt="md">
-            Register
+            {t("auth.registerButton")}
           </Button>
+          <Group justify="center">
+            <LanguageSwitcher size="sm" />
+          </Group>
 
           <Button variant="subtle" fullWidth onClick={() => navigate("/login")}>
-            Already have an account? Login
+            {t("auth.gotoLogin")}
           </Button>
         </Stack>
       </form>
