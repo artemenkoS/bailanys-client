@@ -10,22 +10,15 @@ import {
 } from "@mantine/core";
 import { IconUsers } from "@tabler/icons-react";
 import { ContactCard } from "./ContactCard";
-import type { Profile } from "../../../types/auth";
 import { useTranslation } from "react-i18next";
+import { useOnlineUsers } from "../hooks/useOnlineUsers";
 
 interface ContactListProps {
-  users: Profile[] | null;
-  isLoading: boolean;
-  isError: boolean;
   onStartCall: (targetId: string, type: "audio" | "video") => void;
 }
 
-export const ContactList = ({
-  users,
-  isLoading,
-  isError,
-  onStartCall,
-}: ContactListProps) => {
+export const ContactList = ({ onStartCall }: ContactListProps) => {
+  const { data, isLoading, isError } = useOnlineUsers();
   const { t } = useTranslation();
   return (
     <Container size="xl" px={{ base: "xs", sm: "md" }}>
@@ -44,9 +37,9 @@ export const ContactList = ({
               {t("contacts.connectionError")}
             </Text>
           </Center>
-        ) : users && users.length > 0 ? (
+        ) : data && data.users.length > 0 ? (
           <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
-            {users.map((u) => (
+            {data.users.map((u) => (
               <ContactCard key={u.id} user={u} onStartCall={onStartCall} />
             ))}
           </SimpleGrid>

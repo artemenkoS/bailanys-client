@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../../stores/authStore";
-import type { SignalingMessage } from "../../../types/signaling";
+import type { SocketMessage } from "../../../types/signaling";
 
 export const useSocket = () => {
   const { session, user } = useAuthStore();
@@ -104,13 +104,13 @@ export const useSocket = () => {
     socket.onerror = (error) => {
       console.error("WS Socket Error:", error);
     };
-  }, [accessToken, queryClient]);
+  }, [accessToken, queryClient, userId]);
 
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
-  const sendMessage = useCallback((message: SignalingMessage | object) => {
+  const sendMessage = useCallback((message: SocketMessage | object) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(message));
     } else {

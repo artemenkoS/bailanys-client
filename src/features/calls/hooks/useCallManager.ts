@@ -9,7 +9,11 @@ import type {
   CallHistoryStatus,
   CallType,
 } from "../../../types/callHistory";
-import type { HangupReason, SignalingMessage } from "../../../types/signaling";
+import type {
+  DirectSignalingMessage,
+  HangupReason,
+  SocketMessage,
+} from "../../../types/signaling";
 
 export type CallStatus =
   | "idle"
@@ -38,8 +42,13 @@ const resolveHistoryStatus = (
   return "missed";
 };
 
-export const useCallManager = () => {
-  const [incomingCall, setIncomingCall] = useState<SignalingMessage | null>(
+interface CallManagerOptions {
+  isCallBlocked?: boolean;
+  onBlockedCall?: (from?: string) => void;
+}
+
+export const useCallManager = (options: CallManagerOptions = {}) => {
+  const [incomingCall, setIncomingCall] = useState<DirectSignalingMessage | null>(
     null,
   );
   const [activeCallTarget, setActiveCallTarget] = useState<string | null>(null);
@@ -57,7 +66,7 @@ export const useCallManager = () => {
   const durationIntervalRef = useRef<number | null>(null);
   const historyRefreshTimersRef = useRef<number[]>([]);
 
-  const incomingCallRef = useRef<SignalingMessage | null>(null);
+  const incomingCallRef = useRef<DirectSignalingMessage | null>(null);
   const activeCallTargetRef = useRef<string | null>(null);
 
   const callDirectionRef = useRef<CallDirection | null>(null);
@@ -286,6 +295,10 @@ export const useCallManager = () => {
         console.warn("Call already in progress");
         return;
       }
+      if (options.isCallBlocked) {
+        options.onBlockedCall?.(targetId);
+        return;
+      }
       callDirectionRef.current = "outgoing";
       callStartedAtRef.current = Date.now();
       callConnectedAtRef.current = null;
@@ -303,7 +316,7 @@ export const useCallManager = () => {
         stopCall("ended");
       }
     },
-    [startAudioCall, stopCall, startRingback],
+    [startAudioCall, stopCall, startRingback, options],
   );
 
   const acceptCall = useCallback(async () => {
@@ -345,10 +358,17 @@ export const useCallManager = () => {
     if (!socket) return;
 
     const handleMessage = async (event: MessageEvent) => {
-      const msg: SignalingMessage = JSON.parse(event.data);
+      const msg: SocketMessage = JSON.parse(event.data);
 
       switch (msg.type) {
         case "offer":
+          if (options.isCallBlocked) {
+            if (msg.from) {
+              sendMessage({ type: "hangup", to: msg.from, reason: "rejected" });
+            }
+            options.onBlockedCall?.(msg.from);
+            break;
+          }
           if (
             statusRef.current !== "idle" ||
             activeCallTargetRef.current ||
@@ -429,6 +449,7 @@ export const useCallManager = () => {
     startDurationTimer,
     stopDurationTimer,
     clearHistoryRefreshTimers,
+    options,
   ]);
 
   useEffect(() => {

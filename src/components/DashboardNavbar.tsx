@@ -19,11 +19,13 @@ import { useTranslation } from "react-i18next";
 interface DashboardNavbarProps {
   onLogout: () => void;
   onEditProfile: () => void;
+  onCreateRoom: () => void;
 }
 
 export const DashboardNavbar = ({
   onLogout,
   onEditProfile,
+  onCreateRoom,
 }: DashboardNavbarProps) => {
   const { user } = useAuthStore();
   const { profile } = useProfile();
@@ -93,6 +95,7 @@ export const DashboardNavbar = ({
             fullWidth
             leftSection={<IconPlus size={18} />}
             radius="md"
+            onClick={onCreateRoom}
           >
             {t("nav.createRoom")}
           </Button>

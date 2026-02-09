@@ -11,13 +11,13 @@ import {
   Box,
 } from "@mantine/core";
 import { IconPhone, IconPhoneOff, IconCheck, IconX } from "@tabler/icons-react";
-import type { SignalingMessage } from "../../../types/signaling";
+import type { DirectSignalingMessage } from "../../../types/signaling";
 import type { CallStatus } from "../hooks/useCallManager";
 import { MuteMicButton } from "./MuteMicButton";
 import { useTranslation } from "react-i18next";
 
 interface CallOverlayProps {
-  incomingCall: SignalingMessage | null;
+  incomingCall: DirectSignalingMessage | null;
   activeCallTarget: string | null;
   status: CallStatus;
   durationSeconds: number;
