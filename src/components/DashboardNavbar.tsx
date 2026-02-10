@@ -1,9 +1,10 @@
-import { ActionIcon, AppShell, Avatar, Badge, Button, Card, Group, rem,ScrollArea, Stack, Text } from '@mantine/core';
-import { IconLogout,IconPlus, IconSettings } from '@tabler/icons-react';
+import { ActionIcon, AppShell, Avatar, Badge, Button, Card, Group, ScrollArea, Stack, Text } from '@mantine/core';
+import { IconLogout, IconPlus, IconSettings } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { useProfile } from '../features/profile/hooks/useProfile';
 import { useAuthStore } from '../stores/authStore';
+import styles from './DashboardNavbar.module.css';
 
 interface DashboardNavbarProps {
   onLogout: () => void;
@@ -47,7 +48,7 @@ export const DashboardNavbar = ({ onLogout, onEditProfile, onCreateRoom }: Dashb
             <Avatar color="indigo" radius="xl" size="md" src={avatarUrl}>
               {initialsSource?.[0]?.toUpperCase()}
             </Avatar>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div className={styles.profileInfo}>
               <Text size="sm" fw={600} truncate="end">
                 {displayName}
               </Text>
@@ -83,7 +84,7 @@ export const DashboardNavbar = ({ onLogout, onEditProfile, onCreateRoom }: Dashb
         </Stack>
       </AppShell.Section>
 
-      <AppShell.Section pt="md" style={{ borderTop: `${rem(1)} solid var(--mantine-color-dark-4)` }}>
+      <AppShell.Section pt="md" className={styles.logoutSection}>
         <Button fullWidth variant="subtle" color="red.8" leftSection={<IconLogout size={18} />} onClick={onLogout}>
           {t('nav.signOut')}
         </Button>

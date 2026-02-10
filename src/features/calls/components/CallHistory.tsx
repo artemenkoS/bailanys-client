@@ -1,8 +1,9 @@
-import { Badge, Card, Center, Container, Group, Loader, rem,Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Badge, Card, Center, Container, Group, Loader, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { IconArrowDownLeft, IconArrowUpRight, IconPhoneOff } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import type { CallHistoryItem, CallHistoryStatus } from '../../../types/callHistory';
+import styles from './CallHistory.module.css';
 
 interface CallHistoryProps {
   calls: CallHistoryItem[];
@@ -39,7 +40,7 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
   return (
     <Container size="xl" px={{ base: 'xs', sm: 'md' }}>
       <Stack gap="md" mt="md">
-        <Title order={2} fw={800} style={{ fontSize: rem(24) }}>
+        <Title order={2} fw={800} className={styles.title}>
           {t('calls.historyTitle')}
         </Title>
 
@@ -79,7 +80,7 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
                           <IconArrowUpRight size={18} />
                         )}
                       </ThemeIcon>
-                      <div style={{ overflow: 'hidden' }}>
+                      <div className={styles.overflowHidden}>
                         <Text fw={600} size="sm" truncate>
                           {displayName}
                         </Text>

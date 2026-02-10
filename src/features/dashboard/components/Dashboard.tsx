@@ -4,18 +4,17 @@ import { notifications } from '@mantine/notifications';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 
 import { DashboardNavbar } from '../../../components/DashboardNavbar';
 import { Header } from '../../../components/Header';
 import { useAuthStore } from '../../../stores/authStore';
-import type { CreateRoomPayload } from '../../../types/rooms';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { CallHistory } from '../../calls/components/CallHistory';
 import { CallOverlay } from '../../calls/components/CallOverlay';
 import { RoomPanel } from '../../calls/components/RoomPanel';
 import { useCallHistory } from '../../calls/hooks/useCallHistory';
 import { useCallManager } from '../../calls/hooks/useCallManager';
+import { useCreateRoom } from '../../calls/hooks/useCreateRoom';
 import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
 import { ContactList } from '../../contacts/components/ContactList';
 import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
@@ -80,21 +79,12 @@ export const Dashboard = () => {
     [isInRoom, notifyError, startCall]
   );
 
-  const handleCreateRoom = useCallback(
-    (payload: CreateRoomPayload) => {
-      if (callStatus !== 'idle') {
-        notifyError('rooms.errors.leaveCallToJoin');
-        return null;
-      }
-      if (isInRoom) return null;
-      const generated = uuidv4();
-      const { avatarFile, ...roomPayload } = payload;
-      void avatarFile;
-      createRoom(generated, roomPayload);
-      return generated;
-    },
-    [callStatus, isInRoom, notifyError, createRoom]
-  );
+  const handleCreateRoom = useCreateRoom({
+    callStatus,
+    isInRoom,
+    notifyError,
+    createRoom,
+  });
 
   const handleJoinRoom = useCallback(
     (nextRoomId: string, password?: string) => {

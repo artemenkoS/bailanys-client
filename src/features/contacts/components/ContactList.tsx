@@ -1,9 +1,10 @@
-import { Center, Container, Loader, rem,SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Center, Container, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { ContactCard } from './ContactCard';
+import styles from './ContactList.module.css';
 
 interface ContactListProps {
   onStartCall: (targetId: string, type: 'audio' | 'video') => void;
@@ -15,7 +16,7 @@ export const ContactList = ({ onStartCall }: ContactListProps) => {
   return (
     <Container size="xl" px={{ base: 'xs', sm: 'md' }}>
       <Stack gap="xl" mt="md">
-        <Title order={2} fw={800} style={{ fontSize: rem(24) }}>
+        <Title order={2} fw={800} className={styles.title}>
           {t('contacts.title')}
         </Title>
 

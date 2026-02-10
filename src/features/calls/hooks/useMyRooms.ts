@@ -10,8 +10,6 @@ export const useMyRooms = () => {
     queryKey: ['my-rooms'],
     queryFn: () => apiService.getMyRooms(session?.access_token || ''),
     enabled: !!session?.access_token,
-    refetchInterval: 8000,
-    refetchIntervalInBackground: false,
     staleTime: 5000,
   });
 };

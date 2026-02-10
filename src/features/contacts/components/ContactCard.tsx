@@ -1,8 +1,9 @@
-import { ActionIcon, Avatar, Badge, Button, Card, Group, rem,Text, Tooltip } from '@mantine/core';
-import { IconPhone,IconVideo } from '@tabler/icons-react';
+import { ActionIcon, Avatar, Badge, Button, Card, Group, rem, Text, Tooltip } from '@mantine/core';
+import { IconPhone, IconVideo } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import type { Profile } from '../../../types/auth';
+import styles from './ContactCard.module.css';
 
 interface ContactCardProps {
   user: Profile;
@@ -36,23 +37,13 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
       p="lg"
       radius="lg"
       withBorder
-      style={{
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
-      }}
+      className={styles.card}
     >
       <Group mb="xl" wrap="nowrap">
         <Avatar src={user.avatar_url} size="xl" radius="md" color="indigo" variant="light">
           {user.username[0].toUpperCase()}
         </Avatar>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div className={styles.profileInfo}>
           <Text fw={700} size="lg" truncate="end">
             {displayName}
           </Text>
@@ -69,7 +60,7 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
         <Button
           variant="filled"
           color="indigo"
-          style={{ flex: 1 }}
+          className={styles.callButton}
           leftSection={<IconVideo size={18} />}
           radius="md"
           onClick={() => onStartCall(user.id, 'video')}

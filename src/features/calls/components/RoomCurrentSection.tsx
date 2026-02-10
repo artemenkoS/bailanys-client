@@ -1,8 +1,9 @@
-import { Avatar, Badge, Button, Group, rem,Stack, Text } from '@mantine/core';
+import { Avatar, Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { IconDoorExit } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { MuteMicButton } from './MuteMicButton';
+import styles from './RoomCurrentSection.module.css';
 
 interface RoomCurrentSectionProps {
   roomLabel: string;
@@ -52,7 +53,7 @@ export const RoomCurrentSection = ({
         </Group>
       </Group>
 
-      <Text size="xs" c="dimmed" style={{ letterSpacing: rem(0.3) }}>
+      <Text size="xs" c="dimmed" className={styles.participants}>
         {t('rooms.participants', { count: members.length })}
       </Text>
       <Group gap="xs" wrap="wrap">

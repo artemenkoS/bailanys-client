@@ -1,0 +1,13 @@
+.container {
+  width: 100vw;
+  margin: auto;
+  height: 100vh;
+}
+
+.form {
+  width: 350px;
+}
+
+.title {
+  margin-bottom: 16px;
+}

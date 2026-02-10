@@ -1,4 +1,4 @@
-import { Button, Flex, Group,Stack, TextInput, Typography } from '@mantine/core';
+import { Button, Flex, Group, Stack, TextInput, Typography } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
+import styles from './RegisterForm.module.css';
 
 export const RegisterForm = () => {
   const { register, isRegistering, isAuthenticated } = useAuth();
@@ -49,11 +50,11 @@ export const RegisterForm = () => {
       gap="lg"
       align="center"
       justify="center"
-      style={{ width: '100vw', margin: 'auto', height: '100vh' }}
+      className={styles.container}
     >
-      <form onSubmit={handleSubmit} style={{ width: 350 }}>
+      <form onSubmit={handleSubmit} className={styles.form}>
         <Stack gap="md">
-          <Typography variant="h4" style={{ marginBottom: 16 }}>
+          <Typography variant="h4" className={styles.title}>
             {t('auth.registerTitle')}
           </Typography>
 

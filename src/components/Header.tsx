@@ -1,8 +1,9 @@
-import { AppShell, Burger, Group, rem, Text,Title } from '@mantine/core';
+import { AppShell, Burger, Group, Text, Title } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { useOnlineUsers } from '../features/contacts/hooks/useOnlineUsers';
+import styles from './Header.module.css';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
@@ -20,7 +21,7 @@ export const Header = ({ opened, toggle }: HeaderProps) => {
       <Group justify="space-between" h="100%" wrap="nowrap">
         <Group>
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          <Title order={3} c="indigo.4" style={{ fontSize: rem(20) }}>
+          <Title order={3} c="indigo.4" className={styles.title}>
             Bailanys
           </Title>
         </Group>

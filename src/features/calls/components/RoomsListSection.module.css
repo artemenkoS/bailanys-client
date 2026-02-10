@@ -1,0 +1,43 @@
+.avatarButton {
+  border-radius: var(--mantine-radius-md);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.avatarButton:disabled {
+  cursor: default;
+}
+
+.avatarButton:hover .avatarOverlay,
+.avatarButton:focus-visible .avatarOverlay {
+  opacity: 1;
+}
+
+.avatarBox {
+  position: relative;
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  display: inline-block;
+}
+
+.avatarOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.roomInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.roomMeta {
+  flex: 1;
+  min-width: 0;
+}

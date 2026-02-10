@@ -1,8 +1,23 @@
-import { Avatar, Badge, Button, Card, FileButton, Group, Loader, Stack, Text } from '@mantine/core';
-import { IconDoorEnter } from '@tabler/icons-react';
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Card,
+  FileButton,
+  Group,
+  Loader,
+  Menu,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
+import { IconDoorEnter, IconPencil } from '@tabler/icons-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { RoomOwnerSummary, RoomSummary } from '../../../types/rooms';
+import styles from './RoomsListSection.module.css';
 
 interface RoomsListSectionProps<T extends RoomSummary> {
   title: string;
@@ -50,43 +65,65 @@ const RoomCard = ({
   const showDelete = Boolean(onDelete);
   const showAvatarActions = Boolean(onAvatarChange) && isOwnerRoom;
   const isAvatarUpdating = avatarUpdatingRoomId === room.id;
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
 
-  const avatarActions = showAvatarActions ? (
-    <>
-      <FileButton
-        accept="image/*"
-        onChange={(file) => {
-          if (file) {
-            onAvatarChange?.(room as RoomOwnerSummary, file);
-          }
-        }}
-      >
-        {(props) => (
-          <Button
-            {...props}
-            size="xs"
-            variant="light"
-            disabled={isActionDisabled || isAvatarUpdating}
-            loading={isAvatarUpdating}
-          >
-            {t('rooms.avatarChange')}
-          </Button>
-        )}
-      </FileButton>
-      {room.avatarUrl && onAvatarRemove && (
-        <Button
-          size="xs"
-          color="red"
-          variant="subtle"
-          onClick={() => onAvatarRemove(room as RoomOwnerSummary)}
+  const avatarMenu = showAvatarActions ? (
+    <Menu
+      withinPortal
+      position="bottom-start"
+      disabled={isActionDisabled || isAvatarUpdating}
+      opened={isAvatarMenuOpen}
+      onChange={setIsAvatarMenuOpen}
+    >
+      <Menu.Target>
+        <UnstyledButton
+          aria-label={t('rooms.avatarChange')}
           disabled={isActionDisabled || isAvatarUpdating}
-          loading={isAvatarUpdating}
+          className={styles.avatarButton}
+        >
+          <Box className={styles.avatarBox}>
+            <Avatar size="md" radius="md" src={room.avatarUrl || undefined} color="indigo">
+              {room.name?.[0]?.toUpperCase() ?? '#'}
+            </Avatar>
+            <Box className={styles.avatarOverlay}>
+              <IconPencil size={14} color="white" />
+            </Box>
+          </Box>
+        </UnstyledButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <FileButton
+          accept="image/*"
+          onChange={(file) => {
+            if (file) {
+              onAvatarChange?.(room as RoomOwnerSummary, file);
+              setIsAvatarMenuOpen(false);
+            }
+          }}
+        >
+          {(props) => (
+            <Menu.Item {...props} closeMenuOnClick={false}>
+              {t('rooms.avatarChange')}
+            </Menu.Item>
+          )}
+        </FileButton>
+        <Menu.Item
+          color="red"
+          disabled={!room.avatarUrl || isActionDisabled || isAvatarUpdating}
+          onClick={() => {
+            onAvatarRemove?.(room as RoomOwnerSummary);
+            setIsAvatarMenuOpen(false);
+          }}
         >
           {t('common.removeAvatar')}
-        </Button>
-      )}
-    </>
-  ) : null;
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  ) : (
+    <Avatar size="md" radius="md" src={room.avatarUrl || undefined} color="indigo">
+      {room.name?.[0]?.toUpperCase() ?? '#'}
+    </Avatar>
+  );
 
   const actionButtons = isMobile ? (
     <Stack gap="xs" w="100%">
@@ -112,7 +149,6 @@ const RoomCard = ({
           {t('rooms.delete')}
         </Button>
       )}
-      {avatarActions}
     </Stack>
   ) : (
     <Group gap="xs" wrap="nowrap">
@@ -136,18 +172,15 @@ const RoomCard = ({
           {t('rooms.delete')}
         </Button>
       )}
-      {avatarActions}
     </Group>
   );
 
   return (
     <Card key={room.id} withBorder radius="md" p="sm">
       <Group justify="space-between" align="center" wrap="wrap">
-        <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          <Avatar size="md" radius="md" src={room.avatarUrl || undefined} color="indigo">
-            {room.name?.[0]?.toUpperCase() ?? '#'}
-          </Avatar>
-          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+        <Group gap="sm" wrap="nowrap" className={styles.roomInfo}>
+          {avatarMenu}
+          <Stack gap={4} className={styles.roomMeta}>
             <Group gap="xs" wrap="wrap">
               <Text size="sm" fw={600} truncate="end">
                 {room.name}

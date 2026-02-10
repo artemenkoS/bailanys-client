@@ -1,9 +1,10 @@
-import { ActionIcon, Avatar, Box,Button, Card, Group, Modal, rem, Stack, Text } from '@mantine/core';
+import { ActionIcon, Avatar, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import type { DirectSignalingMessage } from '../../../types/signaling';
 import type { CallStatus } from '../hooks/useCallManager';
+import styles from './CallOverlay.module.css';
 import { MuteMicButton } from './MuteMicButton';
 
 interface CallOverlayProps {
@@ -71,10 +72,7 @@ export const CallOverlay = ({
       >
         <Stack align="center" py="xl">
           <Box
-            style={{
-              animation: 'pulse 1.5s infinite ease-in-out',
-              borderRadius: '50%',
-            }}
+            className={styles.pulseRing}
           >
             <Avatar size="xl" radius="xl" color="indigo" variant="light">
               <IconPhone size={40} />
@@ -85,7 +83,7 @@ export const CallOverlay = ({
               user: incomingCall?.from?.slice(0, 8) ?? '',
             })}
           </Text>
-          <Group mt="lg" grow style={{ width: '100%' }}>
+          <Group mt="lg" grow className={styles.fullWidth}>
             <Button color="green" size="md" leftSection={<IconPhone size={20} />} onClick={onAccept} radius="md">
               {t('calls.accept')}
             </Button>
@@ -108,27 +106,17 @@ export const CallOverlay = ({
           withBorder
           shadow="xl"
           p="sm"
-          style={{
-            position: 'fixed',
-            bottom: rem(20),
-            right: rem(20),
-            left: rem(20),
-            maxWidth: rem(340),
-            marginLeft: 'auto',
-            zIndex: 1000,
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: isFinished ? 'scale(1.02)' : 'scale(1)',
-            borderLeft: `${rem(5)} solid var(--mantine-color-${getThemeColor()}-6)`,
-            backgroundColor: isFinished ? 'var(--mantine-color-red-0)' : 'var(--mantine-color-white)',
-          }}
+          className={styles.callCard}
+          data-finished={isFinished}
+          data-theme={getThemeColor()}
         >
           <Group justify="space-between" wrap="nowrap">
             <Group gap="sm" wrap="nowrap">
               <Avatar color={getThemeColor()} radius="xl" variant={isFinished ? 'filled' : 'light'}>
                 {isFinished ? <IconX size={20} /> : <IconPhone size={20} />}
               </Avatar>
-              <div style={{ overflow: 'hidden' }}>
-                <Text size="xs" fw={700} c={getThemeColor()} tt="uppercase" style={{ letterSpacing: rem(0.5) }}>
+              <div className={styles.overflowHidden}>
+                <Text size="xs" fw={700} c={getThemeColor()} tt="uppercase" className={styles.statusText}>
                   {getStatusLabel()}
                 </Text>
                 <Text size="sm" fw={600} truncate>
@@ -151,25 +139,17 @@ export const CallOverlay = ({
                   radius="md"
                   variant="filled"
                   onClick={onHangup}
-                  style={{ transition: 'transform 0.2s ease' }}
+                  className={styles.hangupButton}
                 >
                   <IconPhoneOff size={22} />
                 </ActionIcon>
               </Group>
             )}
 
-            {isFinished && <IconCheck size={24} color="var(--mantine-color-red-6)" style={{ opacity: 0.7 }} />}
+            {isFinished && <IconCheck size={24} className={styles.finishedIcon} />}
           </Group>
         </Card>
       )}
-
-      <style>{`
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(76, 110, 245, 0.4); }
-          70% { box-shadow: 0 0 0 15px rgba(76, 110, 245, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(76, 110, 245, 0); }
-        }
-      `}</style>
     </>
   );
 };
