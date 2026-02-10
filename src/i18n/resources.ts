@@ -309,8 +309,7 @@ export const resources = {
         success: 'Успешно',
         error: 'Ошибка',
         registrationSuccess: 'Регистрация прошла успешно!',
-        registrationConfirmEmail:
-          'Проверьте почту: для завершения регистрации перейдите по ссылке в письме.',
+        registrationConfirmEmail: 'Проверьте почту: для завершения регистрации перейдите по ссылке в письме.',
         loginSuccess: 'Вход выполнен!',
         registrationFailed: 'Ошибка регистрации',
         loginFailed: 'Ошибка входа',
@@ -471,8 +470,7 @@ export const resources = {
         success: 'Сәтті',
         error: 'Қате',
         registrationSuccess: 'Тіркелу сәтті өтті!',
-        registrationConfirmEmail:
-          'Тіркеуді аяқтау үшін поштаны тексеріп, хаттағы сілтемеге өтіңіз.',
+        registrationConfirmEmail: 'Тіркеуді аяқтау үшін поштаны тексеріп, хаттағы сілтемеге өтіңіз.',
         loginSuccess: 'Сіз кірдіңіз!',
         registrationFailed: 'Тіркелу қатесі',
         loginFailed: 'Кіру қатесі',
