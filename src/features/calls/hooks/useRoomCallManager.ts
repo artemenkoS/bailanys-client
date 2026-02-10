@@ -1,6 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
+import type { CallHistoryStatus } from '../../../types/callHistory';
 import type {
   RoomAnswerMessage,
   RoomIceMessage,
@@ -18,7 +21,9 @@ export type RoomCallStatus = 'idle' | 'joining' | 'joined';
 export const useRoomCallManager = () => {
   const { sendMessage, socket } = useSocket();
   const userId = useAuthStore((state) => state.user?.id);
+  const accessToken = useAuthStore((state) => state.session?.access_token);
   const { getRtcConfiguration } = useRtcConfiguration();
+  const queryClient = useQueryClient();
 
   const [status, setStatus] = useState<RoomCallStatus>('idle');
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -32,6 +37,8 @@ export const useRoomCallManager = () => {
   const peerConnectionsRef = useRef(new Map<string, RTCPeerConnection>());
   const pendingCandidatesRef = useRef(new Map<string, RTCIceCandidateInit[]>());
   const remoteAudioRef = useRef(new Map<string, HTMLAudioElement>());
+  const roomStartedAtRef = useRef<number | null>(null);
+  const roomLoggedRef = useRef(false);
 
   useEffect(() => {
     roomIdRef.current = roomId;
@@ -180,7 +187,45 @@ export const useRoomCallManager = () => {
     setError(null);
     isMicMutedRef.current = false;
     setIsMicMuted(false);
+    roomStartedAtRef.current = null;
+    roomLoggedRef.current = false;
   }, [releaseResources]);
+
+  const persistRoomHistory = useCallback(
+    (status: CallHistoryStatus = 'completed') => {
+      if (roomLoggedRef.current) return;
+      const currentRoomId = roomIdRef.current;
+      const startedAt = roomStartedAtRef.current;
+      if (!currentRoomId || !startedAt) return;
+      if (!accessToken) return;
+
+      const endedAtMs = Date.now();
+      const durationSeconds = Math.max(0, Math.floor((endedAtMs - startedAt) / 1000));
+      const startedAtIso = new Date(startedAt).toISOString();
+      const endedAtIso = new Date(endedAtMs).toISOString();
+
+      roomLoggedRef.current = true;
+
+      void apiService
+        .createCallHistory(accessToken, {
+          roomId: currentRoomId,
+          direction: 'outgoing',
+          status,
+          durationSeconds,
+          callType: 'audio',
+          startedAt: startedAtIso,
+          endedAt: endedAtIso,
+        })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['call-history'] });
+        })
+        .catch((error) => {
+          roomLoggedRef.current = false;
+          console.error('Failed to save room call history:', error);
+        });
+    },
+    [accessToken, queryClient]
+  );
 
   const sendOfferToPeer = useCallback(
     async (peerId: string, currentRoomId: string) => {
@@ -298,11 +343,15 @@ export const useRoomCallManager = () => {
     [sendMessage, status]
   );
 
-  const leaveRoom = useCallback(() => {
-    if (status === 'idle' && !roomIdRef.current) return;
-    sendMessage({ type: 'leave-room' });
-    cleanupRoom();
-  }, [cleanupRoom, sendMessage, status]);
+  const leaveRoom = useCallback(
+    (historyStatus: CallHistoryStatus = 'completed') => {
+      if (status === 'idle' && !roomIdRef.current) return;
+      persistRoomHistory(historyStatus);
+      sendMessage({ type: 'leave-room' });
+      cleanupRoom();
+    },
+    [cleanupRoom, persistRoomHistory, sendMessage, status]
+  );
 
   useEffect(() => {
     if (!socket) return;
@@ -324,6 +373,8 @@ export const useRoomCallManager = () => {
           setRoomId(payload.roomId);
           setStatus('joined');
           setMembers(payload.users);
+          roomStartedAtRef.current = Date.now();
+          roomLoggedRef.current = false;
 
           if (!userId) {
             sendMessage({ type: 'leave-room' });
@@ -338,7 +389,7 @@ export const useRoomCallManager = () => {
               await ensureLocalStream();
             } catch (err) {
               console.error('Failed to access microphone:', err);
-              leaveRoom();
+              leaveRoom('failed');
               setError('rooms.errors.micDenied');
               return;
             }
@@ -432,6 +483,7 @@ export const useRoomCallManager = () => {
 
     const handleClose = () => {
       if (!roomIdRef.current) return;
+      persistRoomHistory('failed');
       cleanupRoom();
     };
 
@@ -455,6 +507,7 @@ export const useRoomCallManager = () => {
     cleanupPeer,
     cleanupRoom,
     leaveRoom,
+    persistRoomHistory,
     status,
   ]);
 

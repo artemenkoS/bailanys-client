@@ -44,6 +44,7 @@ export const resources = {
         historyTitle: 'Call History',
         loadError: 'Failed to load call history.',
         empty: 'No calls yet.',
+        groupCall: 'Group call',
         status: {
           completed: 'Completed',
           missed: 'Missed',
@@ -205,6 +206,7 @@ export const resources = {
         historyTitle: 'История звонков',
         loadError: 'Не удалось загрузить историю.',
         empty: 'Пока нет звонков.',
+        groupCall: 'Групповой звонок',
         status: {
           completed: 'Завершён',
           missed: 'Пропущен',
@@ -366,6 +368,7 @@ export const resources = {
         historyTitle: 'Қоңыраулар тарихы',
         loadError: 'Қоңыраулар тарихын жүктеу сәтсіз.',
         empty: 'Әзірге қоңырау жоқ.',
+        groupCall: 'Топтық қоңырау',
         status: {
           completed: 'Аяқталды',
           missed: 'Жіберіп алды',

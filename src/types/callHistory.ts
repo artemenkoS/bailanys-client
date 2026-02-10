@@ -9,9 +9,16 @@ export interface CallHistoryPeer {
   avatar_url: string | null;
 }
 
+export interface CallHistoryRoom {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+}
+
 export interface CallHistoryItem {
   id: string;
-  peer_id: string;
+  peer_id: string | null;
+  room_id?: string | null;
   direction: CallDirection;
   status: CallHistoryStatus;
   duration_seconds: number;
@@ -19,10 +26,12 @@ export interface CallHistoryItem {
   started_at: string;
   ended_at: string | null;
   peer: CallHistoryPeer | null;
+  room?: CallHistoryRoom | null;
 }
 
 export interface CreateCallHistoryRequest {
-  peerId: string;
+  peerId?: string;
+  roomId?: string;
   direction: CallDirection;
   status: CallHistoryStatus;
   durationSeconds: number;

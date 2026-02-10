@@ -1,5 +1,5 @@
 import { Badge, Card, Center, Container, Group, Loader, Stack, Text, ThemeIcon, Title } from '@mantine/core';
-import { IconArrowDownLeft, IconArrowUpRight, IconPhoneOff } from '@tabler/icons-react';
+import { IconArrowDownLeft, IconArrowUpRight, IconPhoneOff, IconUsersGroup } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import type { CallHistoryItem, CallHistoryStatus } from '../../../types/callHistory';
@@ -61,7 +61,10 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
         ) : (
           <Stack gap="sm">
             {calls.map((call) => {
-              const displayName = call.peer?.display_name || call.peer?.username || call.peer_id.slice(0, 12);
+              const isRoomCall = Boolean(call.room_id || call.room);
+              const roomLabel = call.room?.name || (call.room_id ? call.room_id.slice(0, 12) : t('calls.groupCall'));
+              const peerLabel = call.peer?.display_name || call.peer?.username || call.peer_id?.slice(0, 12) || t('calls.groupCall');
+              const displayName = isRoomCall ? roomLabel : peerLabel;
               const subtitle = new Date(call.started_at).toLocaleString();
 
               return (
@@ -70,11 +73,13 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
                     <Group gap="sm" wrap="nowrap">
                       <ThemeIcon
                         variant="light"
-                        color={call.direction === 'incoming' ? 'teal' : 'indigo'}
+                        color={isRoomCall ? 'grape' : call.direction === 'incoming' ? 'teal' : 'indigo'}
                         radius="xl"
                         size="lg"
                       >
-                        {call.direction === 'incoming' ? (
+                        {isRoomCall ? (
+                          <IconUsersGroup size={18} />
+                        ) : call.direction === 'incoming' ? (
                           <IconArrowDownLeft size={18} />
                         ) : (
                           <IconArrowUpRight size={18} />
