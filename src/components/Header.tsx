@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineUsers } from '../features/contacts/hooks/useOnlineUsers';
 import styles from './Header.module.css';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   opened: boolean;
@@ -32,6 +33,7 @@ export const Header = ({ opened, toggle }: HeaderProps) => {
               {t('header.onlineCount', { count: data?.users.length || 0 })}
             </Text>
           </Group>
+          <ThemeToggle size="sm" />
           <LanguageSwitcher />
         </Group>
       </Group>

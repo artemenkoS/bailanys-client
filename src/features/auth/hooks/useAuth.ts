@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
-import type { LoginData,RegisterData } from '../../../types/auth';
+import type { LoginData, RegisterData } from '../../../types/auth';
 
 export const useAuth = () => {
   const { t } = useTranslation();

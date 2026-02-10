@@ -2,6 +2,7 @@
   width: 100vw;
   margin: auto;
   height: 100vh;
+  position: relative;
 }
 
 .form {
@@ -10,4 +11,10 @@
 
 .title {
   margin-bottom: 16px;
+}
+
+.themeToggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }

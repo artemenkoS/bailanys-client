@@ -32,9 +32,7 @@ export const LanguageSwitcher = ({ size = 'xs' }: LanguageSwitcherProps) => {
     { label: t('common.languages.kk'), value: 'kk' },
   ];
 
-  const renderFlag = (value: string) => (
-    <Box className={`${styles.flag} ${getFlagClassName(value)}`} />
-  );
+  const renderFlag = (value: string) => <Box className={`${styles.flag} ${getFlagClassName(value)}`} />;
 
   return (
     <Select

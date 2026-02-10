@@ -32,13 +32,7 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
   const canCall = user.status === 'online';
 
   return (
-    <Card
-      shadow="sm"
-      p="lg"
-      radius="lg"
-      withBorder
-      className={styles.card}
-    >
+    <Card shadow="sm" p="lg" radius="lg" withBorder className={styles.card}>
       <Group mb="xl" wrap="nowrap">
         <Avatar src={user.avatar_url} size="xl" radius="md" color="indigo" variant="light">
           {user.username[0].toUpperCase()}

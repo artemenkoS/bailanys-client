@@ -71,9 +71,7 @@ export const CallOverlay = ({
         overlayProps={{ backgroundOpacity: 0.5, blur: 3 }}
       >
         <Stack align="center" py="xl">
-          <Box
-            className={styles.pulseRing}
-          >
+          <Box className={styles.pulseRing}>
             <Avatar size="xl" radius="xl" color="indigo" variant="light">
               <IconPhone size={40} />
             </Avatar>
@@ -111,7 +109,7 @@ export const CallOverlay = ({
           data-theme={getThemeColor()}
         >
           <Group justify="space-between" wrap="nowrap">
-            <Group gap="sm" wrap="nowrap">
+            <Group gap="sm" wrap="nowrap" className={styles.callMeta}>
               <Avatar color={getThemeColor()} radius="xl" variant={isFinished ? 'filled' : 'light'}>
                 {isFinished ? <IconX size={20} /> : <IconPhone size={20} />}
               </Avatar>
@@ -131,7 +129,7 @@ export const CallOverlay = ({
             </Group>
 
             {!isFinished && (
-              <Group gap="xs" wrap="nowrap">
+              <Group gap="xs" wrap="nowrap" className={styles.callActions}>
                 <MuteMicButton isMuted={isMicMuted} onToggle={onToggleMute} />
                 <ActionIcon
                   color="red"

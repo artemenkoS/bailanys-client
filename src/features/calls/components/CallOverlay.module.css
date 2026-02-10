@@ -50,6 +50,15 @@
   overflow: hidden;
 }
 
+.callMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.callActions {
+  flex-shrink: 0;
+}
+
 .statusText {
   letter-spacing: 0.5px;
 }
@@ -61,4 +70,21 @@
 .finishedIcon {
   color: var(--mantine-color-red-6);
   opacity: 0.7;
+}
+
+:global([data-mantine-color-scheme='dark']) .callCard {
+  background-color: var(--mantine-color-dark-7);
+}
+
+:global([data-mantine-color-scheme='dark']) .callCard[data-finished='true'] {
+  background-color: var(--mantine-color-red-9);
+}
+
+:global([data-mantine-color-scheme='dark']) .finishedIcon {
+  color: var(--mantine-color-red-3);
+  opacity: 0.85;
+}
+
+.username {
+  text-overflow: ellipsis;
 }
