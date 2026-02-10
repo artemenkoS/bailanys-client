@@ -35,6 +35,8 @@ export const Dashboard = () => {
     error: roomError,
     isMicMuted: isRoomMicMuted,
     toggleMicMute: toggleRoomMicMute,
+    peerVolumes,
+    setPeerVolume,
     joinRoom,
     createRoom,
     leaveRoom,
@@ -148,6 +150,8 @@ export const Dashboard = () => {
           isInRoom={isInRoom}
           roomId={roomId}
           members={roomMembers}
+          memberVolumes={peerVolumes}
+          onMemberVolumeChange={setPeerVolume}
           isMicMuted={isRoomMicMuted}
           onToggleMute={toggleRoomMicMute}
           error={roomError}

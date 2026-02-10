@@ -25,6 +25,8 @@ interface RoomPanelProps {
   isInRoom: boolean;
   roomId: string | null;
   members: string[];
+  memberVolumes: Record<string, number>;
+  onMemberVolumeChange: (id: string, volume: number) => void;
   isMicMuted: boolean;
   onToggleMute: () => void;
   error?: string | null;
@@ -39,6 +41,8 @@ export const RoomPanel = ({
   isInRoom,
   roomId,
   members,
+  memberVolumes,
+  onMemberVolumeChange,
   isMicMuted,
   onToggleMute,
   error,
@@ -288,6 +292,8 @@ export const RoomPanel = ({
               roomLabel={currentRoomLabel || roomId || ''}
               roomAvatarUrl={currentRoomAvatarUrl}
               members={members}
+              memberVolumes={memberVolumes}
+              onMemberVolumeChange={onMemberVolumeChange}
               currentUserId={currentUserId}
               isMicMuted={isMicMuted}
               onToggleMute={onToggleMute}

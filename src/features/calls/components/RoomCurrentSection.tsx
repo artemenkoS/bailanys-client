@@ -1,5 +1,5 @@
-import { Avatar, Badge, Button, Group, Stack, Text } from '@mantine/core';
-import { IconDoorExit } from '@tabler/icons-react';
+import { Avatar, Badge, Button, Group, Slider, Stack, Text } from '@mantine/core';
+import { IconDoorExit, IconVolume2 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { MuteMicButton } from './MuteMicButton';
@@ -9,6 +9,8 @@ interface RoomCurrentSectionProps {
   roomLabel: string;
   roomAvatarUrl?: string | null;
   members: string[];
+  memberVolumes: Record<string, number>;
+  onMemberVolumeChange: (id: string, volume: number) => void;
   currentUserId?: string | null;
   isMicMuted: boolean;
   onToggleMute: () => void;
@@ -20,6 +22,8 @@ export const RoomCurrentSection = ({
   roomLabel,
   roomAvatarUrl,
   members,
+  memberVolumes,
+  onMemberVolumeChange,
   currentUserId,
   isMicMuted,
   onToggleMute,
@@ -44,6 +48,7 @@ export const RoomCurrentSection = ({
           <Button
             color="red"
             variant="light"
+            size="md"
             leftSection={<IconDoorExit size={18} />}
             onClick={onLeaveRoom}
             radius="md"
@@ -56,17 +61,45 @@ export const RoomCurrentSection = ({
       <Text size="xs" c="dimmed" className={styles.participants}>
         {t('rooms.participants', { count: members.length })}
       </Text>
-      <Group gap="xs" wrap="wrap">
-        {members.map((id) => (
-          <Badge
-            key={id}
-            color={id === currentUserId ? 'indigo' : 'gray'}
-            variant={id === currentUserId ? 'filled' : 'light'}
-          >
-            {resolveMemberLabel(id)}
-          </Badge>
-        ))}
-      </Group>
+      <Stack gap="xs">
+        {members.map((id) => {
+          const isSelf = id === currentUserId;
+          const volume = memberVolumes[id] ?? 1;
+          const volumePercent = Math.round(volume * 100);
+          return (
+            <Group key={id} gap="sm" wrap="nowrap" className={styles.memberRow}>
+              <Badge
+                color={isSelf ? 'indigo' : 'gray'}
+                variant={isSelf ? 'filled' : 'light'}
+                className={styles.memberBadge}
+              >
+                {resolveMemberLabel(id)}
+              </Badge>
+              {!isSelf && (
+                <>
+                  <IconVolume2 size={16} className={styles.volumeIcon} />
+                  <Slider
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={volumePercent}
+                    onChange={(value) => {
+                      if (typeof value !== 'number') return;
+                      onMemberVolumeChange(id, value / 100);
+                    }}
+                    className={styles.volumeSlider}
+                    label={(value) => `${value}%`}
+                    aria-label={t('rooms.memberVolume', { user: resolveMemberLabel(id) })}
+                  />
+                  <Text size="xs" c="dimmed" className={styles.volumeValue}>
+                    {volumePercent}%
+                  </Text>
+                </>
+              )}
+            </Group>
+          );
+        })}
+      </Stack>
     </Stack>
   );
 };

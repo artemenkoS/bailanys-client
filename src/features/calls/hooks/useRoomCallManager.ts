@@ -30,6 +30,7 @@ export const useRoomCallManager = () => {
   const [members, setMembers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
+  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
 
   const roomIdRef = useRef<string | null>(null);
   const isMicMutedRef = useRef(false);
@@ -37,6 +38,7 @@ export const useRoomCallManager = () => {
   const peerConnectionsRef = useRef(new Map<string, RTCPeerConnection>());
   const pendingCandidatesRef = useRef(new Map<string, RTCIceCandidateInit[]>());
   const remoteAudioRef = useRef(new Map<string, HTMLAudioElement>());
+  const peerVolumesRef = useRef(new Map<string, number>());
   const roomStartedAtRef = useRef<number | null>(null);
   const roomLoggedRef = useRef(false);
 
@@ -64,6 +66,8 @@ export const useRoomCallManager = () => {
     const audio = new Audio();
     audio.autoplay = true;
     audio.muted = false;
+    const storedVolume = peerVolumesRef.current.get(peerId);
+    audio.volume = typeof storedVolume === 'number' ? storedVolume : 1;
     audio.setAttribute('playsinline', 'true');
     document.body.appendChild(audio);
     remoteAudioRef.current.set(peerId, audio);
@@ -166,6 +170,13 @@ export const useRoomCallManager = () => {
       }
       pendingCandidatesRef.current.delete(peerId);
       cleanupRemoteAudio(peerId);
+      peerVolumesRef.current.delete(peerId);
+      setPeerVolumes((prev) => {
+        if (!(peerId in prev)) return prev;
+        const next = { ...prev };
+        delete next[peerId];
+        return next;
+      });
     },
     [cleanupRemoteAudio]
   );
@@ -189,7 +200,17 @@ export const useRoomCallManager = () => {
     setIsMicMuted(false);
     roomStartedAtRef.current = null;
     roomLoggedRef.current = false;
+    peerVolumesRef.current.clear();
+    setPeerVolumes({});
   }, [releaseResources]);
+
+  const setPeerVolume = useCallback((peerId: string, volume: number) => {
+    const next = Math.min(1, Math.max(0, volume));
+    peerVolumesRef.current.set(peerId, next);
+    setPeerVolumes((prev) => (prev[peerId] === next ? prev : { ...prev, [peerId]: next }));
+    const audio = remoteAudioRef.current.get(peerId);
+    if (audio) audio.volume = next;
+  }, []);
 
   const persistRoomHistory = useCallback(
     (status: CallHistoryStatus = 'completed') => {
@@ -523,6 +544,8 @@ export const useRoomCallManager = () => {
     members,
     error,
     isMicMuted,
+    peerVolumes,
+    setPeerVolume,
     toggleMicMute,
     joinRoom,
     createRoom,

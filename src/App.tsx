@@ -1,7 +1,7 @@
-import { MantineProvider } from '@mantine/core';
+import { Center, Loader, MantineProvider } from '@mantine/core';
 import { Notifications, notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 
@@ -20,8 +20,6 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isHandlingRedirect = hasSupabaseAuthParams();
-  if (isHandlingRedirect) return null;
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -29,10 +27,25 @@ function AppRoutes() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isRedirecting = hasSupabaseAuthParams();
+  const hasHandledRedirectRef = useRef(false);
 
   useEffect(() => {
+    if (!isRedirecting) {
+      hasHandledRedirectRef.current = false;
+      return;
+    }
+
+    if (hasHandledRedirectRef.current) return;
+    hasHandledRedirectRef.current = true;
+
     const redirectResult = parseSupabaseAuthRedirect();
-    if (!redirectResult) return;
+    if (!redirectResult) {
+      clearSupabaseAuthParams();
+      navigate('/login', { replace: true });
+      return;
+    }
 
     if ('error' in redirectResult) {
       notifications.show({
@@ -53,7 +66,15 @@ function AppRoutes() {
     });
     clearSupabaseAuthParams();
     navigate('/', { replace: true });
-  }, [navigate, setAuth, t]);
+  }, [isRedirecting, navigate, setAuth, t]);
+
+  if (isRedirecting) {
+    return (
+      <Center mih="100vh">
+        <Loader size="lg" color="indigo" />
+      </Center>
+    );
+  }
 
   return (
     <Routes>
@@ -67,6 +88,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
     </Routes>
   );
 }
