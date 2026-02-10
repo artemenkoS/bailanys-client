@@ -20,6 +20,15 @@ export const useAuth = () => {
           message: t('notifications.registrationSuccess'),
           color: 'green',
         });
+        return;
+      }
+
+      if (response.user) {
+        notifications.show({
+          title: t('notifications.success'),
+          message: t('notifications.registrationConfirmEmail'),
+          color: 'blue',
+        });
       }
     },
     onError: (error: Error) => {
