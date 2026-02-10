@@ -62,7 +62,11 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
           <Stack gap="sm">
             {calls.map((call) => {
               const isRoomCall = Boolean(call.room_id || call.room);
-              const roomLabel = call.room?.name || (call.room_id ? call.room_id.slice(0, 12) : t('calls.groupCall'));
+              const roomLabel = call.room
+                ? call.room.name || call.room.id.slice(0, 12)
+                : call.room_id
+                  ? call.room_id.slice(0, 12)
+                  : t('calls.groupCall');
               const peerLabel = call.peer?.display_name || call.peer?.username || call.peer_id?.slice(0, 12) || t('calls.groupCall');
               const displayName = isRoomCall ? roomLabel : peerLabel;
               const subtitle = new Date(call.started_at).toLocaleString();
