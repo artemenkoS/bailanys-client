@@ -1,6 +1,7 @@
 import { Button, Group, Modal, PasswordInput, Stack, Text } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useCallStore } from '../../../../stores/callStore';
@@ -16,16 +17,23 @@ export const RoomPasswordModal = () => {
   const joinRoom = useRoomCallStore((state) => state.joinRoom);
   const passwordModalOpen = useRoomUiStore((state) => state.passwordModalOpen);
   const passwordRoom = useRoomUiStore((state) => state.passwordRoom);
-  const passwordInput = useRoomUiStore((state) => state.passwordInput);
-  const passwordError = useRoomUiStore((state) => state.passwordError);
   const closePasswordModal = useRoomUiStore((state) => state.closePasswordModal);
-  const setPasswordInput = useRoomUiStore((state) => state.setPasswordInput);
-  const setPasswordError = useRoomUiStore((state) => state.setPasswordError);
+
+  const form = useForm({
+    initialValues: {
+      password: '',
+    },
+    validate: {
+      password: (value) => (value.trim() ? null : t('rooms.errors.passwordRequired')),
+    },
+  });
+  const formRef = useRef(form);
 
   const isInRoom = Boolean(roomId);
   const isRoomJoining = roomStatus === 'joining';
   const isDisabled = callStatus !== 'idle' || isRoomJoining;
-  const showServerError = roomError && roomError !== passwordError;
+  const showServerError = roomError && !form.errors.password;
+  const passwordRoomId = passwordRoom?.id ?? null;
 
   useEffect(() => {
     if (isInRoom && passwordModalOpen) {
@@ -33,18 +41,32 @@ export const RoomPasswordModal = () => {
     }
   }, [isInRoom, passwordModalOpen, closePasswordModal]);
 
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    if (!passwordModalOpen) {
+      formRef.current.reset();
+    }
+  }, [passwordModalOpen]);
+
+  useEffect(() => {
+    if (passwordRoomId) {
+      formRef.current.setFieldValue('password', '');
+      formRef.current.clearErrors();
+    }
+  }, [passwordRoomId]);
+
   const handleClose = () => {
     closePasswordModal();
   };
 
   const handleSubmit = () => {
     if (!passwordRoom) return;
-    const password = passwordInput.trim();
-    if (!password) {
-      setPasswordError('rooms.errors.passwordRequired');
-      return;
-    }
-    setPasswordError(null);
+    const validation = form.validate();
+    if (validation.hasErrors) return;
+    const password = form.values.password.trim();
     if (callStatus !== 'idle') {
       notifications.show({
         title: t('notifications.error'),
@@ -65,12 +87,8 @@ export const RoomPasswordModal = () => {
         <PasswordInput
           label={t('rooms.passwordLabel')}
           placeholder={t('rooms.passwordPlaceholder')}
-          value={passwordInput}
-          onChange={(e) => {
-            setPasswordInput(e.currentTarget.value);
-            if (passwordError) setPasswordError(null);
-          }}
-          error={passwordError ? t(passwordError) : undefined}
+          {...form.getInputProps('password')}
+          error={form.errors.password}
           disabled={isDisabled}
         />
         {showServerError && (
