@@ -48,6 +48,10 @@ export const resources = {
         loadError: 'Failed to load messages.',
         placeholder: 'Type a message...',
         unknownUser: 'Unknown user',
+        deleted: 'Message deleted',
+        edited: 'edited',
+        editing: 'Editing message',
+        typing: 'Typing...',
       },
       calls: {
         historyTitle: 'Call History',
@@ -219,6 +223,10 @@ export const resources = {
         loadError: 'Не удалось загрузить сообщения.',
         placeholder: 'Напишите сообщение...',
         unknownUser: 'Неизвестный пользователь',
+        deleted: 'Сообщение удалено',
+        edited: 'изменено',
+        editing: 'Редактирование сообщения',
+        typing: 'Печатает...',
       },
       calls: {
         historyTitle: 'История звонков',
@@ -390,6 +398,10 @@ export const resources = {
         loadError: 'Хабарламаларды жүктеу сәтсіз.',
         placeholder: 'Хабарлама жазыңыз...',
         unknownUser: 'Белгісіз пайдаланушы',
+        deleted: 'Хабарлама жойылды',
+        edited: 'өзгертілді',
+        editing: 'Хабарламаны өңдеу',
+        typing: 'Жазып жатыр...',
       },
       calls: {
         historyTitle: 'Қоңыраулар тарихы',

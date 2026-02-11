@@ -184,6 +184,25 @@ class ApiService {
     });
   }
 
+  async updateChatMessage(token: string, id: string, body: string): Promise<{ message: ChatMessage }> {
+    return this.fetch<{ message: ChatMessage }>('/api/messages', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id, body }),
+    });
+  }
+
+  async deleteChatMessage(token: string, id: string): Promise<{ message: ChatMessage }> {
+    return this.fetch<{ message: ChatMessage }>(`/api/messages?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
   async getCallHistory(token: string): Promise<{ calls: CallHistoryItem[] }> {
     return this.fetch<{ calls: CallHistoryItem[] }>('/api/call-history', {
       headers: {

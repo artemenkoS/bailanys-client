@@ -1,5 +1,5 @@
 import { ActionIcon, Avatar, Group, ScrollArea, Stack, Text, Textarea } from '@mantine/core';
-import { IconArrowLeft, IconSend } from '@tabler/icons-react';
+import { IconArrowLeft, IconEdit, IconSend, IconTrash, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,10 @@ import { useAuthStore } from '../../../stores/authStore';
 import type { Profile } from '../../../types/auth';
 import type { ChatMessage } from '../../../types/chat';
 import { useChatMessages } from '../hooks/useChatMessages';
+import { useDeleteChatMessage } from '../hooks/useDeleteChatMessage';
 import { useSendChatMessage } from '../hooks/useSendChatMessage';
+import { useTypingIndicator } from '../hooks/useTypingIndicator';
+import { useUpdateChatMessage } from '../hooks/useUpdateChatMessage';
 import styles from './ChatScreen.module.css';
 
 type ChatLocationState = {
@@ -35,6 +38,7 @@ export const ChatScreen = () => {
   const userId = useAuthStore((state) => state.user?.id ?? '');
   const initialPeer = (location.state as ChatLocationState | null)?.peer ?? null;
   const [draft, setDraft] = useState('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const { data: peerData } = useQuery({
@@ -54,6 +58,9 @@ export const ChatScreen = () => {
 
   const { messages, isLoading, isError } = useChatMessages(peerId ?? null);
   const { sendMessage, isSending } = useSendChatMessage(peerId ?? null);
+  const { updateMessage, isUpdating } = useUpdateChatMessage(peerId ?? null);
+  const { deleteMessage, isDeleting } = useDeleteChatMessage(peerId ?? null);
+  const { isPeerTyping, onInputActivity, stopTyping } = useTypingIndicator(peerId ?? null);
 
   const orderedMessages = useMemo(() => sortByCreatedAt(messages), [messages]);
 
@@ -64,10 +71,29 @@ export const ChatScreen = () => {
     }
   }, [orderedMessages.length]);
 
-
   const handleSend = () => {
-    if (!draft.trim()) return;
-    sendMessage(draft);
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    if (editingMessageId) {
+      updateMessage(editingMessageId, trimmed);
+      setEditingMessageId(null);
+      setDraft('');
+      stopTyping();
+      return;
+    }
+    sendMessage(trimmed);
+    setDraft('');
+    stopTyping();
+  };
+
+  const handleEdit = (message: ChatMessage) => {
+    if (!message.body) return;
+    setEditingMessageId(message.id);
+    setDraft(message.body);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
     setDraft('');
   };
 
@@ -96,6 +122,11 @@ export const ChatScreen = () => {
               </Text>
             ) : null}
           </div>
+          {isPeerTyping ? (
+            <Text size="xs" c="dimmed" className={styles.typing}>
+              {t('chat.typing')}
+            </Text>
+          ) : null}
         </Group>
       </div>
 
@@ -121,11 +152,43 @@ export const ChatScreen = () => {
           <Stack gap="xs">
             {orderedMessages.map((message) => {
               const isOwn = message.sender_id === userId;
+              const isDeleted = Boolean(message.deleted_at) || message.body.trim() === '';
+              const displayBody = isDeleted ? t('chat.deleted') : message.body;
               return (
                 <div key={message.id} className={styles.messageRow}>
                   <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`}>
-                    <Text size="sm">{message.body}</Text>
-                    <div className={styles.timestamp}>{formatTime(message.created_at)}</div>
+                    <Text size="sm" c={isDeleted ? 'dimmed' : undefined} fs={isDeleted ? 'italic' : undefined}>
+                      {displayBody}
+                    </Text>
+                    <div className={styles.metaRow}>
+                      <div className={styles.metaLeft}>
+                        <span className={styles.timestamp}>{formatTime(message.created_at)}</span>
+                        {message.edited_at && !isDeleted ? (
+                          <span className={styles.edited}>{t('chat.edited')}</span>
+                        ) : null}
+                      </div>
+                      {isOwn && !isDeleted ? (
+                        <div className={styles.actions}>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size={24}
+                            onClick={() => handleEdit(message)}
+                          >
+                            <IconEdit size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size={24}
+                            onClick={() => deleteMessage(message.id)}
+                            disabled={isDeleting}
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               );
@@ -134,15 +197,29 @@ export const ChatScreen = () => {
         )}
       </ScrollArea>
 
+      {editingMessageId ? (
+        <div className={styles.editBanner}>
+          <Text size="xs" c="dimmed">
+            {t('chat.editing')}
+          </Text>
+          <ActionIcon variant="subtle" color="gray" size={24} onClick={handleCancelEdit}>
+            <IconX size={14} />
+          </ActionIcon>
+        </div>
+      ) : null}
+
       <div className={styles.inputRow}>
         <Textarea
           value={draft}
-          onChange={(event) => setDraft(event.currentTarget.value)}
+          onChange={(event) => {
+            setDraft(event.currentTarget.value);
+            onInputActivity();
+          }}
           placeholder={t('chat.placeholder')}
           minRows={1}
           maxRows={1}
           onKeyDown={handleKeyDown}
-          disabled={isSending}
+          disabled={isSending || isUpdating}
           classNames={{ root: styles.inputRoot, input: styles.inputField }}
         />
         <ActionIcon
@@ -150,11 +227,12 @@ export const ChatScreen = () => {
           variant="filled"
           size={42}
           onClick={handleSend}
-          disabled={!draft.trim() || isSending}
+          disabled={!draft.trim() || isSending || isUpdating}
         >
           <IconSend size={18} />
         </ActionIcon>
       </div>
+
     </div>
   );
 };

@@ -58,6 +58,8 @@ export const useChatMessages = (peerId: string | null) => {
         receiver_id: message.receiver_id,
         body: message.body,
         created_at: message.created_at,
+        edited_at: typeof message.edited_at === 'string' ? message.edited_at : null,
+        deleted_at: typeof message.deleted_at === 'string' ? message.deleted_at : null,
       };
 
       const isForThread =

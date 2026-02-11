@@ -25,6 +25,12 @@
   gap: 2px;
 }
 
+.typing {
+  margin-left: 8px;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
 .messages {
   flex: 1;
   background: var(--mantine-color-gray-0);
@@ -50,6 +56,37 @@
   margin-bottom: 0;
 }
 
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.metaLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edited {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.messageRow:hover .actions {
+  opacity: 1;
+}
+
 .bubble {
   padding: 10px 12px;
   border-radius: 14px;
@@ -72,7 +109,6 @@
 
 .timestamp {
   font-size: 11px;
-  margin-top: 4px;
   opacity: 0.7;
 }
 
@@ -81,6 +117,19 @@
   align-items: flex-end;
   gap: 8px;
   width: 100%;
+}
+
+.editBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--mantine-color-gray-0);
+}
+
+:global([data-mantine-color-scheme='dark']) .editBanner {
+  background: var(--mantine-color-dark-6);
 }
 
 .inputRoot {

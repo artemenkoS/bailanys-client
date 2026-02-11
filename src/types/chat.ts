@@ -4,6 +4,8 @@ export interface ChatMessage {
   receiver_id: string;
   body: string;
   created_at: string;
+  edited_at?: string | null;
+  deleted_at?: string | null;
 }
 
 export interface ChatMessagesResponse {
