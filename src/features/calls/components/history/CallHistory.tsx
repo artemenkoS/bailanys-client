@@ -2,7 +2,7 @@ import { Badge, Card, Center, Container, Group, Loader, Stack, Text, ThemeIcon, 
 import { IconArrowDownLeft, IconArrowUpRight, IconPhoneOff, IconUsersGroup } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
-import type { CallHistoryItem, CallHistoryStatus } from '../../../types/callHistory';
+import type { CallHistoryItem, CallHistoryStatus } from '../../../../types/callHistory';
 import styles from './CallHistory.module.css';
 
 interface CallHistoryProps {

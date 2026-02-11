@@ -3,7 +3,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { CreateRoomPayload } from '../../../types/rooms';
+import type { CreateRoomPayload } from '../../../../types/rooms';
 
 interface RoomCreateSectionProps {
   disabled?: boolean;

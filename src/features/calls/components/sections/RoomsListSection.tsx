@@ -16,7 +16,7 @@ import { IconDoorEnter, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { RoomOwnerSummary, RoomSummary } from '../../../types/rooms';
+import type { RoomOwnerSummary, RoomSummary } from '../../../../types/rooms';
 import styles from './RoomsListSection.module.css';
 
 interface RoomsListSectionProps<T extends RoomSummary> {

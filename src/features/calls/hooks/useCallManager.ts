@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
+import { useCallStore } from '../../../stores/callStore';
 import type { CallDirection, CallHistoryStatus, CallType } from '../../../types/callHistory';
 import type { DirectSignalingMessage, HangupReason, SocketMessage } from '../../../types/signaling';
 import { useSocket } from './useSocket';
@@ -40,6 +41,9 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   const [activeCallTarget, setActiveCallTarget] = useState<string | null>(null);
   const [status, setStatus] = useState<CallStatus>('idle');
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+  const setCallState = useCallStore((state) => state.setState);
+  const setCallActions = useCallStore((state) => state.setActions);
+  const resetCallStore = useCallStore((state) => state.reset);
 
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((state) => state.session?.access_token);
@@ -319,6 +323,32 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
+
+  useEffect(() => {
+    setCallState({
+      incomingCall,
+      activeCallTarget,
+      status,
+      durationSeconds: callDurationSeconds,
+      isMicMuted,
+    });
+  }, [incomingCall, activeCallTarget, status, callDurationSeconds, isMicMuted, setCallState]);
+
+  useEffect(() => {
+    setCallActions({
+      startCall,
+      acceptCall,
+      stopCall,
+      toggleMicMute,
+      cleanup,
+    });
+  }, [setCallActions, startCall, acceptCall, stopCall, toggleMicMute, cleanup]);
+
+  useEffect(() => {
+    return () => {
+      resetCallStore();
+    };
+  }, [resetCallStore]);
 
   useEffect(() => {
     if (!socket) return;

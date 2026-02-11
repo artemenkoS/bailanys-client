@@ -7,15 +7,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { DashboardNavbar } from '../../../components/DashboardNavbar';
 import { Header } from '../../../components/Header';
-import { useAuthStore } from '../../../stores/authStore';
+import { useCallStore } from '../../../stores/callStore';
+import { useRoomCallStore } from '../../../stores/roomCallStore';
 import type { Profile } from '../../../types/auth';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { CallHistory } from '../../calls/components/CallHistory';
-import { CallOverlay } from '../../calls/components/CallOverlay';
-import { RoomPanel } from '../../calls/components/RoomPanel';
+import { CallHistory } from '../../calls/components/history/CallHistory';
+import { CallOverlay } from '../../calls/components/overlays/CallOverlay';
+import { RoomPanel } from '../../calls/components/panels/RoomPanel';
 import { useCallHistory } from '../../calls/hooks/useCallHistory';
 import { useCallManager } from '../../calls/hooks/useCallManager';
-import { useCreateRoom } from '../../calls/hooks/useCreateRoom';
 import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
 import { ChatScreen } from '../../chat/components/ChatScreen';
 import { ContactList } from '../../contacts/components/ContactList';
@@ -27,26 +27,14 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { peerId } = useParams();
-  const currentUserId = useAuthStore((state) => state.user?.id || null);
   const [opened, { toggle }] = useDisclosure();
   const [profileOpened, { open: openProfile, close: closeProfile }] = useDisclosure(false);
   const { data: callHistoryData, isLoading: isCallHistoryLoading, isError: isCallHistoryError } = useCallHistory();
 
-  const {
-    status: roomStatus,
-    roomId,
-    members: roomMembers,
-    error: roomError,
-    isMicMuted: isRoomMicMuted,
-    toggleMicMute: toggleRoomMicMute,
-    peerVolumes,
-    setPeerVolume,
-    joinRoom,
-    createRoom,
-    leaveRoom,
-  } = useRoomCallManager();
-  const isInRoom = !!roomId;
-  const isRoomJoining = roomStatus === 'joining';
+  useRoomCallManager();
+  const roomId = useRoomCallStore((state) => state.roomId);
+  const leaveRoom = useRoomCallStore((state) => state.leaveRoom);
+  const isInRoom = Boolean(roomId);
 
   const notifyError = useCallback(
     (messageKey: string) => {
@@ -58,21 +46,12 @@ export const Dashboard = () => {
     [t]
   );
 
-  const {
-    incomingCall,
-    activeCallTarget,
-    startCall,
-    acceptCall,
-    stopCall,
-    cleanup,
-    status: callStatus,
-    callDurationSeconds,
-    isMicMuted,
-    toggleMicMute,
-  } = useCallManager({
+  useCallManager({
     isCallBlocked: isInRoom,
     onBlockedCall: () => notifyError('rooms.errors.leaveRoomToCall'),
   });
+  const startCall = useCallStore((state) => state.startCall);
+  const cleanup = useCallStore((state) => state.cleanup);
 
   const handleStartCall = useCallback(
     (targetId: string, callType: 'audio' | 'video') => {
@@ -84,29 +63,6 @@ export const Dashboard = () => {
     },
     [isInRoom, notifyError, startCall]
   );
-
-  const handleCreateRoom = useCreateRoom({
-    callStatus,
-    isInRoom,
-    notifyError,
-    createRoom,
-  });
-
-  const handleJoinRoom = useCallback(
-    (nextRoomId: string, password?: string) => {
-      if (callStatus !== 'idle') {
-        notifyError('rooms.errors.leaveCallToJoin');
-        return;
-      }
-      if (isInRoom) return;
-      joinRoom(nextRoomId, { password });
-    },
-    [callStatus, notifyError, joinRoom, isInRoom]
-  );
-
-  const handleLeaveRoom = useCallback(() => {
-    leaveRoom();
-  }, [leaveRoom]);
 
   const handleLogout = () => {
     leaveRoom();
@@ -126,17 +82,7 @@ export const Dashboard = () => {
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
     >
-      <CallOverlay
-        incomingCall={incomingCall}
-        activeCallTarget={activeCallTarget}
-        onAccept={acceptCall}
-        onReject={() => stopCall('rejected')}
-        onHangup={() => stopCall('ended')}
-        status={callStatus}
-        durationSeconds={callDurationSeconds}
-        isMicMuted={isMicMuted}
-        onToggleMute={toggleMicMute}
-      />
+      <CallOverlay />
 
       <Header opened={opened} toggle={toggle} />
 
@@ -156,21 +102,7 @@ export const Dashboard = () => {
           <ChatScreen />
         ) : (
           <>
-            <RoomPanel
-              onJoinRoom={handleJoinRoom}
-              onCreateRoom={handleCreateRoom}
-              onLeaveRoom={handleLeaveRoom}
-              isInRoom={isInRoom}
-              roomId={roomId}
-              members={roomMembers}
-              memberVolumes={peerVolumes}
-              onMemberVolumeChange={setPeerVolume}
-              isMicMuted={isRoomMicMuted}
-              onToggleMute={toggleRoomMicMute}
-              error={roomError}
-              isDisabled={callStatus !== 'idle' || isRoomJoining}
-              currentUserId={currentUserId}
-            />
+            <RoomPanel />
             <ContactList onStartCall={handleStartCall} onOpenChat={handleOpenChat} />
             <CallHistory
               calls={callHistoryData?.calls || []}

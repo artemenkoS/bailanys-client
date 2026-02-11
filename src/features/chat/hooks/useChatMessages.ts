@@ -11,7 +11,7 @@ const sortByCreatedAt = (messages: ChatMessage[]) =>
 
 const mergeMessage = (messages: ChatMessage[], incoming: ChatMessage) => {
   if (messages.some((message) => message.id === incoming.id)) {
-    return messages;
+    return messages.map((message) => (message.id === incoming.id ? { ...message, ...incoming } : message));
   }
   return sortByCreatedAt([...messages, incoming]);
 };

@@ -2,35 +2,20 @@ import { ActionIcon, Avatar, Box, Button, Card, Group, Modal, Stack, Text } from
 import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
-import type { DirectSignalingMessage } from '../../../types/signaling';
-import type { CallStatus } from '../hooks/useCallManager';
+import { useCallStore } from '../../../../stores/callStore';
+import { MuteMicButton } from '../shared/MuteMicButton';
 import styles from './CallOverlay.module.css';
-import { MuteMicButton } from './MuteMicButton';
 
-interface CallOverlayProps {
-  incomingCall: DirectSignalingMessage | null;
-  activeCallTarget: string | null;
-  status: CallStatus;
-  durationSeconds: number;
-  isMicMuted: boolean;
-  onAccept: () => void;
-  onReject: () => void;
-  onHangup: () => void;
-  onToggleMute: () => void;
-}
-
-export const CallOverlay = ({
-  incomingCall,
-  activeCallTarget,
-  status,
-  durationSeconds,
-  isMicMuted,
-  onAccept,
-  onReject,
-  onHangup,
-  onToggleMute,
-}: CallOverlayProps) => {
+export const CallOverlay = () => {
   const { t } = useTranslation();
+  const incomingCall = useCallStore((state) => state.incomingCall);
+  const activeCallTarget = useCallStore((state) => state.activeCallTarget);
+  const status = useCallStore((state) => state.status);
+  const durationSeconds = useCallStore((state) => state.durationSeconds);
+  const isMicMuted = useCallStore((state) => state.isMicMuted);
+  const acceptCall = useCallStore((state) => state.acceptCall);
+  const stopCall = useCallStore((state) => state.stopCall);
+  const toggleMicMute = useCallStore((state) => state.toggleMicMute);
   const isEnded = status === 'ended';
   const isRejected = status === 'rejected';
   const isCalling = status === 'calling';
@@ -63,7 +48,7 @@ export const CallOverlay = ({
     <>
       <Modal
         opened={!!incomingCall && status === 'idle'}
-        onClose={onReject}
+        onClose={() => stopCall('rejected')}
         title={t('calls.incomingAudio')}
         centered
         withCloseButton={false}
@@ -82,7 +67,7 @@ export const CallOverlay = ({
             })}
           </Text>
           <Group mt="lg" grow className={styles.fullWidth}>
-            <Button color="green" size="md" leftSection={<IconPhone size={20} />} onClick={onAccept} radius="md">
+            <Button color="green" size="md" leftSection={<IconPhone size={20} />} onClick={acceptCall} radius="md">
               {t('calls.accept')}
             </Button>
             <Button
@@ -90,7 +75,7 @@ export const CallOverlay = ({
               variant="light"
               size="md"
               leftSection={<IconX size={20} />}
-              onClick={onReject}
+              onClick={() => stopCall('rejected')}
               radius="md"
             >
               {t('calls.reject')}
@@ -130,13 +115,13 @@ export const CallOverlay = ({
 
             {!isFinished && (
               <Group gap="xs" wrap="nowrap" className={styles.callActions}>
-                <MuteMicButton isMuted={isMicMuted} onToggle={onToggleMute} />
+                <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
                 <ActionIcon
                   color="red"
                   size="xl"
                   radius="md"
                   variant="filled"
-                  onClick={onHangup}
+                  onClick={() => stopCall('ended')}
                   className={styles.hangupButton}
                 >
                   <IconPhoneOff size={22} />

@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
+import { useRoomCallStore } from '../../../stores/roomCallStore';
 import type { CallHistoryStatus } from '../../../types/callHistory';
 import type {
   RoomAnswerMessage,
@@ -25,12 +26,65 @@ export const useRoomCallManager = () => {
   const { getRtcConfiguration } = useRtcConfiguration();
   const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<RoomCallStatus>('idle');
-  const [roomId, setRoomId] = useState<string | null>(null);
-  const [members, setMembers] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
+  const status = useRoomCallStore((state) => state.status);
+  const roomId = useRoomCallStore((state) => state.roomId);
+  const members = useRoomCallStore((state) => state.members);
+  const error = useRoomCallStore((state) => state.error);
+  const isMicMuted = useRoomCallStore((state) => state.isMicMuted);
+  const peerVolumes = useRoomCallStore((state) => state.peerVolumes);
+  const setRoomState = useRoomCallStore((state) => state.setState);
+  const setRoomActions = useRoomCallStore((state) => state.setActions);
+  const resetRoomStore = useRoomCallStore((state) => state.reset);
+
+  const setStatus = useCallback(
+    (next: RoomCallStatus) => {
+      setRoomState({ status: next });
+    },
+    [setRoomState]
+  );
+
+  const setRoomId = useCallback(
+    (next: string | null) => {
+      setRoomState({ roomId: next });
+    },
+    [setRoomState]
+  );
+
+  const setMembers = useCallback(
+    (next: string[] | ((prev: string[]) => string[])) => {
+      if (typeof next === 'function') {
+        setRoomState((state) => ({ members: next(state.members) }));
+        return;
+      }
+      setRoomState({ members: next });
+    },
+    [setRoomState]
+  );
+
+  const setError = useCallback(
+    (next: string | null) => {
+      setRoomState({ error: next });
+    },
+    [setRoomState]
+  );
+
+  const setIsMicMuted = useCallback(
+    (next: boolean) => {
+      setRoomState({ isMicMuted: next });
+    },
+    [setRoomState]
+  );
+
+  const setPeerVolumes = useCallback(
+    (next: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => {
+      if (typeof next === 'function') {
+        setRoomState((state) => ({ peerVolumes: next(state.peerVolumes) }));
+        return;
+      }
+      setRoomState({ peerVolumes: next });
+    },
+    [setRoomState]
+  );
 
   const roomIdRef = useRef<string | null>(null);
   const isMicMutedRef = useRef(false);
@@ -58,7 +112,7 @@ export const useRoomCallManager = () => {
     isMicMutedRef.current = nextMuted;
     setIsMicMuted(nextMuted);
     applyMuteState(localStreamRef.current, nextMuted);
-  }, [applyMuteState]);
+  }, [applyMuteState, setIsMicMuted]);
 
   const ensureRemoteAudio = useCallback((peerId: string) => {
     const existing = remoteAudioRef.current.get(peerId);
@@ -178,7 +232,7 @@ export const useRoomCallManager = () => {
         return next;
       });
     },
-    [cleanupRemoteAudio]
+    [cleanupRemoteAudio, setPeerVolumes]
   );
 
   const releaseResources = useCallback(() => {
@@ -202,15 +256,18 @@ export const useRoomCallManager = () => {
     roomLoggedRef.current = false;
     peerVolumesRef.current.clear();
     setPeerVolumes({});
-  }, [releaseResources]);
+  }, [releaseResources, setRoomId, setMembers, setStatus, setError, setIsMicMuted, setPeerVolumes]);
 
-  const setPeerVolume = useCallback((peerId: string, volume: number) => {
-    const next = Math.min(1, Math.max(0, volume));
-    peerVolumesRef.current.set(peerId, next);
-    setPeerVolumes((prev) => (prev[peerId] === next ? prev : { ...prev, [peerId]: next }));
-    const audio = remoteAudioRef.current.get(peerId);
-    if (audio) audio.volume = next;
-  }, []);
+  const setPeerVolume = useCallback(
+    (peerId: string, volume: number) => {
+      const next = Math.min(1, Math.max(0, volume));
+      peerVolumesRef.current.set(peerId, next);
+      setPeerVolumes((prev) => (prev[peerId] === next ? prev : { ...prev, [peerId]: next }));
+      const audio = remoteAudioRef.current.get(peerId);
+      if (audio) audio.volume = next;
+    },
+    [setPeerVolumes]
+  );
 
   const persistRoomHistory = useCallback(
     (status: CallHistoryStatus = 'completed') => {
@@ -339,7 +396,7 @@ export const useRoomCallManager = () => {
         password: options?.password,
       });
     },
-    [sendMessage, status]
+    [sendMessage, setError, setStatus, status]
   );
 
   const createRoom = useCallback(
@@ -361,7 +418,7 @@ export const useRoomCallManager = () => {
         password: options.password,
       });
     },
-    [sendMessage, status]
+    [sendMessage, setError, setStatus, status]
   );
 
   const leaveRoom = useCallback(
@@ -529,8 +586,28 @@ export const useRoomCallManager = () => {
     cleanupRoom,
     leaveRoom,
     persistRoomHistory,
+    setError,
+    setMembers,
+    setRoomId,
+    setStatus,
     status,
   ]);
+
+  useEffect(() => {
+    setRoomActions({
+      joinRoom,
+      createRoom,
+      leaveRoom,
+      toggleMicMute,
+      setPeerVolume,
+    });
+  }, [setRoomActions, joinRoom, createRoom, leaveRoom, toggleMicMute, setPeerVolume]);
+
+  useEffect(() => {
+    return () => {
+      resetRoomStore();
+    };
+  }, [resetRoomStore]);
 
   useEffect(() => {
     return () => {

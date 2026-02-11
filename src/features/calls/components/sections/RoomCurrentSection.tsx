@@ -1,36 +1,64 @@
 import { Avatar, Badge, Button, Group, Slider, Stack, Text } from '@mantine/core';
 import { IconDoorExit, IconVolume2 } from '@tabler/icons-react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { MuteMicButton } from './MuteMicButton';
+import { useAuthStore } from '../../../../stores/authStore';
+import { useRoomCallStore } from '../../../../stores/roomCallStore';
+import { useOnlineUsers } from '../../../contacts/hooks/useOnlineUsers';
+import { useMyRooms } from '../../hooks/useMyRooms';
+import { useRooms } from '../../hooks/useRooms';
+import { MuteMicButton } from '../shared/MuteMicButton';
 import styles from './RoomCurrentSection.module.css';
 
-interface RoomCurrentSectionProps {
-  roomLabel: string;
-  roomAvatarUrl?: string | null;
-  members: string[];
-  memberVolumes: Record<string, number>;
-  onMemberVolumeChange: (id: string, volume: number) => void;
-  currentUserId?: string | null;
-  isMicMuted: boolean;
-  onToggleMute: () => void;
-  onLeaveRoom: () => void;
-  resolveMemberLabel: (id: string) => string;
-}
-
-export const RoomCurrentSection = ({
-  roomLabel,
-  roomAvatarUrl,
-  members,
-  memberVolumes,
-  onMemberVolumeChange,
-  currentUserId,
-  isMicMuted,
-  onToggleMute,
-  onLeaveRoom,
-  resolveMemberLabel,
-}: RoomCurrentSectionProps) => {
+export const RoomCurrentSection = () => {
   const { t } = useTranslation();
+  const { data: roomsData } = useRooms();
+  const { data: myRoomsData } = useMyRooms();
+  const { data: onlineUsers } = useOnlineUsers();
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const roomId = useRoomCallStore((state) => state.roomId);
+  const members = useRoomCallStore((state) => state.members);
+  const memberVolumes = useRoomCallStore((state) => state.peerVolumes);
+  const isMicMuted = useRoomCallStore((state) => state.isMicMuted);
+  const toggleMicMute = useRoomCallStore((state) => state.toggleMicMute);
+  const leaveRoom = useRoomCallStore((state) => state.leaveRoom);
+  const setMemberVolume = useRoomCallStore((state) => state.setPeerVolume);
+
+  const handleLeaveRoom = useCallback(() => {
+    leaveRoom();
+  }, [leaveRoom]);
+
+  const rooms = useMemo(() => roomsData?.rooms ?? [], [roomsData?.rooms]);
+  const myRooms = useMemo(() => myRoomsData?.rooms ?? [], [myRoomsData?.rooms]);
+
+  const currentRoom = useMemo(() => {
+    if (!roomId) return null;
+    return rooms.find((room) => room.id === roomId) ?? myRooms.find((room) => room.id === roomId) ?? null;
+  }, [rooms, myRooms, roomId]);
+
+  const roomLabel = useMemo(() => {
+    if (!roomId) return '';
+    return currentRoom?.name ?? roomId;
+  }, [currentRoom, roomId]);
+
+  const roomAvatarUrl = currentRoom?.avatarUrl ?? null;
+
+  const profileById = useMemo(() => {
+    const map = new Map<string, { displayName: string }>();
+    for (const user of onlineUsers?.users ?? []) {
+      const displayName = user.display_name || user.username || user.id.slice(0, 8);
+      map.set(user.id, { displayName });
+    }
+    return map;
+  }, [onlineUsers?.users]);
+
+  const resolveMemberLabel = (id: string) => {
+    if (currentUserId && id === currentUserId) return t('rooms.you');
+    return profileById.get(id)?.displayName ?? id.slice(0, 8);
+  };
+
+  if (!roomId) return null;
 
   return (
     <Stack gap="sm">
@@ -44,13 +72,13 @@ export const RoomCurrentSection = ({
           </Text>
         </Group>
         <Group gap="xs" wrap="nowrap">
-          <MuteMicButton isMuted={isMicMuted} onToggle={onToggleMute} />
+          <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
           <Button
             color="red"
             variant="light"
             size="md"
             leftSection={<IconDoorExit size={18} />}
-            onClick={onLeaveRoom}
+            onClick={handleLeaveRoom}
             radius="md"
           >
             {t('rooms.leave')}
@@ -85,7 +113,7 @@ export const RoomCurrentSection = ({
                     value={volumePercent}
                     onChange={(value) => {
                       if (typeof value !== 'number') return;
-                      onMemberVolumeChange(id, value / 100);
+                      setMemberVolume(id, value / 100);
                     }}
                     className={styles.volumeSlider}
                     label={(value) => `${value}%`}
