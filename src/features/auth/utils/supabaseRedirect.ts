@@ -15,7 +15,16 @@ type RedirectResult =
       errorDescription?: string | null;
     };
 
-const AUTH_DETECT_KEYS = ['access_token', 'refresh_token', 'error', 'error_code', 'error_description'];
+const AUTH_DETECT_KEYS = [
+  'access_token',
+  'refresh_token',
+  'error',
+  'error_code',
+  'error_description',
+  'code',
+  'token',
+  'token_hash',
+];
 
 const AUTH_CLEAN_KEYS = [
   'access_token',
@@ -24,6 +33,9 @@ const AUTH_CLEAN_KEYS = [
   'expires_at',
   'token_type',
   'type',
+  'code',
+  'token',
+  'token_hash',
   'error',
   'error_code',
   'error_description',
@@ -129,11 +141,22 @@ export const parseSupabaseAuthRedirect = (url = window.location.href): RedirectR
     };
   }
 
+  const code = params.get('code');
+  const tokenHash = params.get('token_hash') ?? params.get('token');
+  if (code || tokenHash) {
+    return {
+      source,
+      error: 'unsupported_flow',
+      errorDescription:
+        'Unsupported Supabase redirect flow. Please update Supabase auth redirect settings to use the implicit flow.',
+    };
+  }
+
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const expiresIn = resolveExpiresIn(params);
 
-  if (!accessToken || !refreshToken || !expiresIn) {
+  if (!accessToken || !refreshToken || expiresIn === null) {
     return {
       source,
       error: 'missing_tokens',

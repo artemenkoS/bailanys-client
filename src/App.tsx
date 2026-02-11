@@ -1,9 +1,9 @@
 import { Center, Loader, MantineProvider } from '@mantine/core';
 import { Notifications, notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
 import { LoginForm } from './features/auth/components/LoginForm';
 import { RegisterForm } from './features/auth/components/RegisterForm';
@@ -25,10 +25,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const setAuth = useAuthStore((state) => state.setAuth);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isRedirecting = hasSupabaseAuthParams();
+  const isRedirecting = useMemo(() => {
+    const currentUrl = `${window.location.origin}${location.pathname}${location.search}${location.hash}`;
+    return hasSupabaseAuthParams(currentUrl);
+  }, [location.hash, location.pathname, location.search]);
   const hasHandledRedirectRef = useRef(false);
 
   useEffect(() => {
@@ -40,32 +44,43 @@ function AppRoutes() {
     if (hasHandledRedirectRef.current) return;
     hasHandledRedirectRef.current = true;
 
-    const redirectResult = parseSupabaseAuthRedirect();
-    if (!redirectResult) {
+    const finish = (path: string) => {
       clearSupabaseAuthParams();
-      navigate('/login', { replace: true });
-      return;
-    }
+      navigate(path, { replace: true });
+    };
 
-    if ('error' in redirectResult) {
+    try {
+      const redirectResult = parseSupabaseAuthRedirect();
+      if (!redirectResult) {
+        finish('/login');
+        return;
+      }
+
+      if ('error' in redirectResult) {
+        notifications.show({
+          title: t('notifications.error'),
+          message: redirectResult.errorDescription || t('notifications.loginFailed'),
+          color: 'red',
+        });
+        finish('/login');
+        return;
+      }
+
+      setAuth(redirectResult.user, redirectResult.session);
+      notifications.show({
+        title: t('notifications.success'),
+        message: t('notifications.loginSuccess'),
+        color: 'green',
+      });
+      finish('/');
+    } catch (error: unknown) {
       notifications.show({
         title: t('notifications.error'),
-        message: redirectResult.errorDescription || t('notifications.loginFailed'),
+        message: error instanceof Error ? error.message : t('notifications.loginFailed'),
         color: 'red',
       });
-      clearSupabaseAuthParams();
-      navigate('/login', { replace: true });
-      return;
+      finish('/login');
     }
-
-    setAuth(redirectResult.user, redirectResult.session);
-    notifications.show({
-      title: t('notifications.success'),
-      message: t('notifications.loginSuccess'),
-      color: 'green',
-    });
-    clearSupabaseAuthParams();
-    navigate('/', { replace: true });
   }, [isRedirecting, navigate, setAuth, t]);
 
   if (isRedirecting) {
