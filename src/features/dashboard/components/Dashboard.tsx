@@ -3,11 +3,12 @@ import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { DashboardNavbar } from '../../../components/DashboardNavbar';
 import { Header } from '../../../components/Header';
 import { useAuthStore } from '../../../stores/authStore';
+import type { Profile } from '../../../types/auth';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { CallHistory } from '../../calls/components/CallHistory';
 import { CallOverlay } from '../../calls/components/CallOverlay';
@@ -16,13 +17,16 @@ import { useCallHistory } from '../../calls/hooks/useCallHistory';
 import { useCallManager } from '../../calls/hooks/useCallManager';
 import { useCreateRoom } from '../../calls/hooks/useCreateRoom';
 import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
+import { ChatScreen } from '../../chat/components/ChatScreen';
 import { ContactList } from '../../contacts/components/ContactList';
 import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
+import styles from './Dashboard.module.css';
 
 export const Dashboard = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { peerId } = useParams();
   const currentUserId = useAuthStore((state) => state.user?.id || null);
   const [opened, { toggle }] = useDisclosure();
   const [profileOpened, { open: openProfile, close: closeProfile }] = useDisclosure(false);
@@ -111,8 +115,13 @@ export const Dashboard = () => {
     navigate('/login');
   };
 
+  const handleOpenChat = (peer: Profile) => {
+    navigate(`/chat/${peer.id}`, { state: { peer } });
+  };
+
   return (
     <AppShell
+      className={peerId ? styles.shellChat : undefined}
       header={{ height: 70 }}
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
@@ -142,28 +151,34 @@ export const Dashboard = () => {
         }}
       />
 
-      <AppShell.Main>
-        <RoomPanel
-          onJoinRoom={handleJoinRoom}
-          onCreateRoom={handleCreateRoom}
-          onLeaveRoom={handleLeaveRoom}
-          isInRoom={isInRoom}
-          roomId={roomId}
-          members={roomMembers}
-          memberVolumes={peerVolumes}
-          onMemberVolumeChange={setPeerVolume}
-          isMicMuted={isRoomMicMuted}
-          onToggleMute={toggleRoomMicMute}
-          error={roomError}
-          isDisabled={callStatus !== 'idle' || isRoomJoining}
-          currentUserId={currentUserId}
-        />
-        <ContactList onStartCall={handleStartCall} />
-        <CallHistory
-          calls={callHistoryData?.calls || []}
-          isLoading={isCallHistoryLoading}
-          isError={isCallHistoryError}
-        />
+      <AppShell.Main className={peerId ? styles.mainChat : undefined}>
+        {peerId ? (
+          <ChatScreen />
+        ) : (
+          <>
+            <RoomPanel
+              onJoinRoom={handleJoinRoom}
+              onCreateRoom={handleCreateRoom}
+              onLeaveRoom={handleLeaveRoom}
+              isInRoom={isInRoom}
+              roomId={roomId}
+              members={roomMembers}
+              memberVolumes={peerVolumes}
+              onMemberVolumeChange={setPeerVolume}
+              isMicMuted={isRoomMicMuted}
+              onToggleMute={toggleRoomMicMute}
+              error={roomError}
+              isDisabled={callStatus !== 'idle' || isRoomJoining}
+              currentUserId={currentUserId}
+            />
+            <ContactList onStartCall={handleStartCall} onOpenChat={handleOpenChat} />
+            <CallHistory
+              calls={callHistoryData?.calls || []}
+              isLoading={isCallHistoryLoading}
+              isError={isCallHistoryError}
+            />
+          </>
+        )}
       </AppShell.Main>
 
       <ProfileEditModal opened={profileOpened} onClose={closeProfile} />

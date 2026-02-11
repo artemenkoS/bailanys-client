@@ -40,6 +40,15 @@ export const resources = {
         connectionError: 'Connection error. Please try again later.',
         empty: 'No one else is online right now.',
       },
+      chat: {
+        title: 'Chat',
+        open: 'Open chat',
+        empty: 'No messages yet.',
+        loading: 'Loading messages...',
+        loadError: 'Failed to load messages.',
+        placeholder: 'Type a message...',
+        unknownUser: 'Unknown user',
+      },
       calls: {
         historyTitle: 'Call History',
         loadError: 'Failed to load call history.',
@@ -202,6 +211,15 @@ export const resources = {
         connectionError: 'Ошибка подключения. Попробуйте позже.',
         empty: 'Сейчас никто больше не онлайн.',
       },
+      chat: {
+        title: 'Чат',
+        open: 'Открыть чат',
+        empty: 'Сообщений пока нет.',
+        loading: 'Загрузка сообщений...',
+        loadError: 'Не удалось загрузить сообщения.',
+        placeholder: 'Напишите сообщение...',
+        unknownUser: 'Неизвестный пользователь',
+      },
       calls: {
         historyTitle: 'История звонков',
         loadError: 'Не удалось загрузить историю.',
@@ -363,6 +381,15 @@ export const resources = {
         title: 'Контактілер',
         connectionError: 'Байланыс қатесі. Кейінірек қайталап көріңіз.',
         empty: 'Қазір басқа ешкім онлайн емес.',
+      },
+      chat: {
+        title: 'Чат',
+        open: 'Чатты ашу',
+        empty: 'Әзірге хабарламалар жоқ.',
+        loading: 'Хабарламалар жүктелуде...',
+        loadError: 'Хабарламаларды жүктеу сәтсіз.',
+        placeholder: 'Хабарлама жазыңыз...',
+        unknownUser: 'Белгісіз пайдаланушы',
       },
       calls: {
         historyTitle: 'Қоңыраулар тарихы',

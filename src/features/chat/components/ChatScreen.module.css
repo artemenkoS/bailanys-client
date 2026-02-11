@@ -1,0 +1,94 @@
+.chatScreen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.peerInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.messages {
+  flex: 1;
+  background: var(--mantine-color-gray-0);
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 0;
+}
+
+:global([data-mantine-color-scheme='dark']) .messages {
+  background: var(--mantine-color-dark-6);
+}
+
+.messagesViewport {
+  height: 100%;
+}
+
+.messageRow {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.messageRow:last-child {
+  margin-bottom: 0;
+}
+
+.bubble {
+  padding: 10px 12px;
+  border-radius: 14px;
+  max-width: 70%;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.bubbleOwn {
+  margin-left: auto;
+  background: var(--mantine-color-indigo-filled);
+  color: var(--mantine-color-white);
+}
+
+.bubbleOther {
+  margin-right: auto;
+  background: var(--mantine-color-gray-2);
+  color: var(--mantine-color-dark-7);
+}
+
+.timestamp {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.inputRoot {
+  flex: 1;
+}
+
+.inputField {
+  min-height: 42px;
+  height: 42px;
+  line-height: 20px;
+}

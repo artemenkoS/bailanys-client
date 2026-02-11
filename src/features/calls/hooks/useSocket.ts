@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import type { SocketMessage } from '../../../types/signaling';
 
 type SocketSubscriber = (socket: WebSocket | null) => void;
+type SocketMessageSubscriber = (data: unknown) => void;
 
 let sharedSocket: WebSocket | null = null;
 let sharedAccessToken: string | null = null;
@@ -13,12 +14,21 @@ let sharedQueryClient: ReturnType<typeof useQueryClient> | null = null;
 let reconnectTimeout: number | null = null;
 let consumerCount = 0;
 const subscribers = new Set<SocketSubscriber>();
+const messageSubscribers = new Set<SocketMessageSubscriber>();
 
 const notifySubscribers = () => {
   for (const subscriber of subscribers) {
     subscriber(sharedSocket);
   }
 };
+
+const notifyMessageSubscribers = (data: unknown) => {
+  for (const subscriber of messageSubscribers) {
+    subscriber(data);
+  }
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 const clearReconnectTimeout = () => {
   if (reconnectTimeout) {
@@ -70,7 +80,11 @@ const connectShared = () => {
 
   socket.onmessage = (event) => {
     try {
-      const data = JSON.parse(event.data);
+      const data = JSON.parse(event.data) as unknown;
+      if (!isRecord(data) || typeof data.type !== 'string') {
+        notifyMessageSubscribers(data);
+        return;
+      }
       if (data.type === 'presence-check') {
         if (sharedSocket?.readyState === WebSocket.OPEN) {
           sharedSocket.send(JSON.stringify({ type: 'presence-pong' }));
@@ -82,19 +96,21 @@ const connectShared = () => {
       }
       if (data.type === 'user-status') {
         sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
-        if (data.userId && data.userId === sharedUserId) {
+        const userIdValue = typeof data.userId === 'string' ? data.userId : null;
+        if (userIdValue && userIdValue === sharedUserId) {
           sharedQueryClient?.invalidateQueries({
             queryKey: ['profile', sharedAccessToken],
           });
         }
       }
+      notifyMessageSubscribers(data);
     } catch (err) {
       console.error('WS Message Error:', err);
     }
   };
 
   socket.onclose = (event) => {
-    console.log(`❌ WS Closed: ${event.reason}`);
+    console.log(`WS Closed: ${event.reason}`);
     sharedSocket = null;
     notifySubscribers();
     sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
@@ -188,4 +204,13 @@ export const useSocket = () => {
     disconnect,
     socket: socketInstance,
   };
+};
+
+export const useSocketMessages = (subscriber: SocketMessageSubscriber) => {
+  useEffect(() => {
+    messageSubscribers.add(subscriber);
+    return () => {
+      messageSubscribers.delete(subscriber);
+    };
+  }, [subscriber]);
 };

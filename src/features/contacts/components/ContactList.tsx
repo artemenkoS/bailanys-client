@@ -2,15 +2,17 @@ import { Center, Container, Loader, SimpleGrid, Stack, Text, Title } from '@mant
 import { IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
+import type { Profile } from '../../../types/auth';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { ContactCard } from './ContactCard';
 import styles from './ContactList.module.css';
 
 interface ContactListProps {
   onStartCall: (targetId: string, type: 'audio' | 'video') => void;
+  onOpenChat: (user: Profile) => void;
 }
 
-export const ContactList = ({ onStartCall }: ContactListProps) => {
+export const ContactList = ({ onStartCall, onOpenChat }: ContactListProps) => {
   const { data, isLoading, isError } = useOnlineUsers();
   const { t } = useTranslation();
   return (
@@ -33,7 +35,7 @@ export const ContactList = ({ onStartCall }: ContactListProps) => {
         ) : data && data.users.length > 0 ? (
           <SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
             {data.users.map((u) => (
-              <ContactCard key={u.id} user={u} onStartCall={onStartCall} />
+              <ContactCard key={u.id} user={u} onStartCall={onStartCall} onOpenChat={() => onOpenChat(u)} />
             ))}
           </SimpleGrid>
         ) : (

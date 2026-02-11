@@ -1,5 +1,5 @@
 import { ActionIcon, Avatar, Badge, Button, Card, Group, rem, Text, Tooltip } from '@mantine/core';
-import { IconPhone, IconVideo } from '@tabler/icons-react';
+import { IconMessageCircle, IconPhone, IconVideo } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import type { Profile } from '../../../types/auth';
@@ -8,9 +8,10 @@ import styles from './ContactCard.module.css';
 interface ContactCardProps {
   user: Profile;
   onStartCall: (targetUserId: string, type: 'video' | 'audio') => void;
+  onOpenChat: () => void;
 }
 
-export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
+export const ContactCard = ({ user, onStartCall, onOpenChat }: ContactCardProps) => {
   const { t } = useTranslation();
   const displayName = user.display_name || user.username;
   const statusLabel =
@@ -73,6 +74,12 @@ export const ContactCard = ({ user, onStartCall }: ContactCardProps) => {
             disabled={!canCall}
           >
             <IconPhone size={20} />
+          </ActionIcon>
+        </Tooltip>
+
+        <Tooltip label={t('chat.open')} withArrow position="bottom">
+          <ActionIcon variant="light" color="indigo" size={rem(42)} radius="md" onClick={onOpenChat}>
+            <IconMessageCircle size={20} />
           </ActionIcon>
         </Tooltip>
       </Group>

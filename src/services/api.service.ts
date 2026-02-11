@@ -1,6 +1,7 @@
 import { useAuthStore } from '../stores/authStore';
 import type { AuthResponse, LoginData, Profile, RegisterData, UpdateProfileData } from '../types/auth';
 import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
+import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
 import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -154,6 +155,32 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async getUserById(token: string, userId: string): Promise<{ user: Profile }> {
+    return this.fetch<{ user: Profile }>(`/api/user?id=${encodeURIComponent(userId)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getChatMessages(token: string, peerId: string): Promise<ChatMessagesResponse> {
+    return this.fetch<ChatMessagesResponse>(`/api/messages?peerId=${encodeURIComponent(peerId)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async sendChatMessage(token: string, data: SendChatMessageRequest): Promise<{ message: ChatMessage }> {
+    return this.fetch<{ message: ChatMessage }>('/api/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
   }
 
