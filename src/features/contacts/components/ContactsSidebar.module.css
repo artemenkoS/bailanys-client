@@ -1,0 +1,36 @@
+.sectionTitle {
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.sectionTitleRow {
+  margin-bottom: 0.35rem;
+}
+
+.sectionBody {
+  margin-top: 0.5rem;
+}
+
+.contactRow {
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.contactRow:hover {
+  background-color: var(--mantine-color-gray-0);
+}
+
+.contactMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.contactText {
+  flex: 1;
+  min-width: 0;
+}
+
+:global(html[data-mantine-color-scheme='dark']) .contactRow:hover {
+  background-color: var(--mantine-color-dark-6);
+}

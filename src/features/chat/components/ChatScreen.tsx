@@ -169,12 +169,7 @@ export const ChatScreen = () => {
                       </div>
                       {isOwn && !isDeleted ? (
                         <div className={styles.actions}>
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            size={24}
-                            onClick={() => handleEdit(message)}
-                          >
+                          <ActionIcon variant="subtle" color="gray" size={24} onClick={() => handleEdit(message)}>
                             <IconEdit size={14} />
                           </ActionIcon>
                           <ActionIcon
@@ -232,7 +227,6 @@ export const ChatScreen = () => {
           <IconSend size={18} />
         </ActionIcon>
       </div>
-
     </div>
   );
 };

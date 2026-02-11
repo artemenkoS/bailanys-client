@@ -67,7 +67,8 @@ export const CallHistory = ({ calls, isLoading, isError }: CallHistoryProps) => 
                 : call.room_id
                   ? call.room_id.slice(0, 12)
                   : t('calls.groupCall');
-              const peerLabel = call.peer?.display_name || call.peer?.username || call.peer_id?.slice(0, 12) || t('calls.groupCall');
+              const peerLabel =
+                call.peer?.display_name || call.peer?.username || call.peer_id?.slice(0, 12) || t('calls.groupCall');
               const displayName = isRoomCall ? roomLabel : peerLabel;
               const subtitle = new Date(call.started_at).toLocaleString();
 

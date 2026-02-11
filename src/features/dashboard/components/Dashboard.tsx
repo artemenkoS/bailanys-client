@@ -18,7 +18,6 @@ import { useCallHistory } from '../../calls/hooks/useCallHistory';
 import { useCallManager } from '../../calls/hooks/useCallManager';
 import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
 import { ChatScreen } from '../../chat/components/ChatScreen';
-import { ContactList } from '../../contacts/components/ContactList';
 import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
 import styles from './Dashboard.module.css';
 
@@ -95,6 +94,8 @@ export const Dashboard = () => {
           const input = document.getElementById('room-create-name') as HTMLInputElement | null;
           input?.focus();
         }}
+        onStartCall={handleStartCall}
+        onOpenChat={handleOpenChat}
       />
 
       <AppShell.Main className={peerId ? styles.mainChat : undefined}>
@@ -103,7 +104,6 @@ export const Dashboard = () => {
         ) : (
           <>
             <RoomPanel />
-            <ContactList onStartCall={handleStartCall} onOpenChat={handleOpenChat} />
             <CallHistory
               calls={callHistoryData?.calls || []}
               isLoading={isCallHistoryLoading}

@@ -1,18 +1,40 @@
-import { ActionIcon, AppShell, Avatar, Badge, Button, Card, Group, ScrollArea, Stack, Text } from '@mantine/core';
+import {
+  ActionIcon,
+  AppShell,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Divider,
+  Group,
+  ScrollArea,
+  Stack,
+  Text,
+} from '@mantine/core';
 import { IconLogout, IconPlus, IconSettings } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
+import { ContactsSidebar } from '../features/contacts/components/ContactsSidebar';
 import { useProfile } from '../features/profile/hooks/useProfile';
 import { useAuthStore } from '../stores/authStore';
+import type { Profile } from '../types/auth';
 import styles from './DashboardNavbar.module.css';
 
 interface DashboardNavbarProps {
   onLogout: () => void;
   onEditProfile: () => void;
   onCreateRoom: () => void;
+  onStartCall: (targetId: string, type: 'audio' | 'video') => void;
+  onOpenChat: (user: Profile) => void;
 }
 
-export const DashboardNavbar = ({ onLogout, onEditProfile, onCreateRoom }: DashboardNavbarProps) => {
+export const DashboardNavbar = ({
+  onLogout,
+  onEditProfile,
+  onCreateRoom,
+  onStartCall,
+  onOpenChat,
+}: DashboardNavbarProps) => {
   const { user } = useAuthStore();
   const { profile } = useProfile();
   const { t } = useTranslation();
@@ -81,6 +103,8 @@ export const DashboardNavbar = ({ onLogout, onEditProfile, onCreateRoom }: Dashb
           >
             {t('nav.createRoom')}
           </Button>
+          <Divider my="sm" />
+          <ContactsSidebar onStartCall={onStartCall} onOpenChat={onOpenChat} />
         </Stack>
       </AppShell.Section>
 

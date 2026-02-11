@@ -2,7 +2,7 @@ import { AppShell, Burger, Group, Text, Title } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
-import { useOnlineUsers } from '../features/contacts/hooks/useOnlineUsers';
+import { useContacts } from '../features/contacts/hooks/useContacts';
 import styles from './Header.module.css';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './ThemeToggle';
@@ -15,7 +15,8 @@ interface HeaderProps {
 export const Header = ({ opened, toggle }: HeaderProps) => {
   const { t } = useTranslation();
 
-  const { data } = useOnlineUsers();
+  const { data } = useContacts();
+  const onlineCount = data?.contacts?.filter((contact) => contact.status === 'online').length ?? 0;
 
   return (
     <AppShell.Header p="md">
@@ -30,7 +31,7 @@ export const Header = ({ opened, toggle }: HeaderProps) => {
           <Group gap="xs" visibleFrom="xs">
             <IconUsers size={18} color="gray" />
             <Text size="sm" c="dimmed" fw={500}>
-              {t('header.onlineCount', { count: data?.users.length || 0 })}
+              {t('header.onlineCount', { count: onlineCount })}
             </Text>
           </Group>
           <ThemeToggle size="sm" />

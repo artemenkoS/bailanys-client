@@ -76,6 +76,7 @@ const connectShared = () => {
     console.log('WS Connected');
     notifySubscribers();
     sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
+    sharedQueryClient?.invalidateQueries({ queryKey: ['contacts'] });
   };
 
   socket.onmessage = (event) => {
@@ -93,9 +94,11 @@ const connectShared = () => {
       }
       if (data.type === 'user-connected' || data.type === 'user-disconnected') {
         sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
+        sharedQueryClient?.invalidateQueries({ queryKey: ['contacts'] });
       }
       if (data.type === 'user-status') {
         sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
+        sharedQueryClient?.invalidateQueries({ queryKey: ['contacts'] });
         const userIdValue = typeof data.userId === 'string' ? data.userId : null;
         if (userIdValue && userIdValue === sharedUserId) {
           sharedQueryClient?.invalidateQueries({
@@ -114,6 +117,7 @@ const connectShared = () => {
     sharedSocket = null;
     notifySubscribers();
     sharedQueryClient?.invalidateQueries({ queryKey: ['online-users'] });
+    sharedQueryClient?.invalidateQueries({ queryKey: ['contacts'] });
 
     if (event.code !== 1000 && sharedAccessToken && consumerCount > 0) {
       if (!reconnectTimeout) {

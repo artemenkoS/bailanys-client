@@ -2,6 +2,7 @@ import { useAuthStore } from '../stores/authStore';
 import type { AuthResponse, LoginData, Profile, RegisterData, UpdateProfileData } from '../types/auth';
 import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
 import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
+import type { ContactRequestsResponse, ContactSearchResult } from '../types/contacts';
 import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -155,6 +156,54 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async getContacts(token: string): Promise<{ contacts: Profile[] }> {
+    return this.fetch<{ contacts: Profile[] }>('/api/contacts', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async searchContacts(token: string, query: string): Promise<{ users: ContactSearchResult[] }> {
+    return this.fetch<{ users: ContactSearchResult[] }>(`/api/contacts/search?query=${encodeURIComponent(query)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getContactRequests(token: string): Promise<ContactRequestsResponse> {
+    return this.fetch<ContactRequestsResponse>('/api/contacts/requests', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async createContactRequest(token: string, targetId: string): Promise<{ request: unknown }> {
+    return this.fetch<{ request: unknown }>('/api/contacts/requests', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ targetId }),
+    });
+  }
+
+  async updateContactRequest(
+    token: string,
+    requestId: string,
+    action: 'accept' | 'decline' | 'cancel'
+  ): Promise<{ request: unknown }> {
+    return this.fetch<{ request: unknown }>('/api/contacts/requests', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ requestId, action }),
     });
   }
 
