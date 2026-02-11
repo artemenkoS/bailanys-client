@@ -53,6 +53,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   const ringContextRef = useRef<AudioContext | null>(null);
   const ringOscillatorRef = useRef<OscillatorNode | null>(null);
   const ringGainRef = useRef<GainNode | null>(null);
+  const incomingRingRef = useRef<HTMLAudioElement | null>(null);
   const durationIntervalRef = useRef<number | null>(null);
   const historyRefreshTimersRef = useRef<number[]>([]);
 
@@ -204,6 +205,13 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     ringGainRef.current = null;
   }, []);
 
+  const stopIncomingRing = useCallback(() => {
+    const audio = incomingRingRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+  }, []);
+
   const startRingback = useCallback(async () => {
     if (ringIntervalRef.current) return;
 
@@ -240,11 +248,29 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     ringIntervalRef.current = window.setInterval(ringOnce, 3000);
   }, []);
 
+  const startIncomingRing = useCallback(async () => {
+    let audio = incomingRingRef.current;
+    if (!audio) {
+      audio = new Audio('/sounds/incoming-call.m4a');
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.volume = 0.35;
+      audio.setAttribute('playsinline', 'true');
+      incomingRingRef.current = audio;
+    }
+    try {
+      await audio.play();
+    } catch {
+      // Autoplay can be blocked until user interaction.
+    }
+  }, []);
+
   const stopCall = useCallback(
     (reason: HangupReason = 'ended') => {
       const targetId = activeCallTargetRef.current || incomingCallRef.current?.from;
       if (targetId) sendMessage({ type: 'hangup', to: targetId, reason });
 
+      stopIncomingRing();
       stopRingback();
       stopDurationTimer();
       cleanup();
@@ -256,7 +282,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
         clearCallUI();
       }, 250);
     },
-    [sendMessage, cleanup, clearCallUI, stopRingback, persistCallHistory, stopDurationTimer]
+    [sendMessage, cleanup, clearCallUI, stopIncomingRing, stopRingback, persistCallHistory, stopDurationTimer]
   );
 
   const startCall = useCallback(
@@ -279,6 +305,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       setStatus('calling');
       setActiveCallTarget(targetId);
       try {
+        stopIncomingRing();
         await startRingback();
         await startAudioCall(targetId);
       } catch (e) {
@@ -286,7 +313,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
         stopCall('ended');
       }
     },
-    [startAudioCall, stopCall, startRingback, options]
+    [startAudioCall, stopCall, stopIncomingRing, startRingback, options]
   );
 
   const acceptCall = useCallback(async () => {
@@ -302,6 +329,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     setActiveCallTarget(targetId);
 
     try {
+      stopIncomingRing();
       await handleRemoteOffer(targetId, pendingCall.offer);
       setIncomingCall(null);
       setStatus('connected');
@@ -310,7 +338,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       console.error('Accept call error:', e);
       stopCall('ended');
     }
-  }, [handleRemoteOffer, startDurationTimer, stopCall]);
+  }, [handleRemoteOffer, startDurationTimer, stopCall, stopIncomingRing]);
 
   useEffect(() => {
     incomingCallRef.current = incomingCall;
@@ -379,6 +407,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
           callTypeRef.current = msg.callType || 'audio';
           loggedRef.current = false;
           setCallDurationSeconds(0);
+          void startIncomingRing();
           break;
 
         case 'answer':
@@ -403,6 +432,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
 
         case 'hangup': {
           stopDurationTimer();
+          stopIncomingRing();
           stopRingback();
           cleanup();
           const remoteReason: HangupReason = msg.reason === 'rejected' ? 'rejected' : 'ended';
@@ -420,6 +450,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     socket.addEventListener('message', handleMessage);
     return () => {
       socket.removeEventListener('message', handleMessage);
+      stopIncomingRing();
       stopRingback();
       stopDurationTimer();
       clearHistoryRefreshTimers();
@@ -432,6 +463,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     handleRemoteIceCandidate,
     cleanup,
     clearCallUI,
+    stopIncomingRing,
     stopRingback,
     persistCallHistory,
     startDurationTimer,
@@ -443,6 +475,10 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   useEffect(() => {
     if (status !== 'calling') stopRingback();
   }, [status, stopRingback]);
+
+  useEffect(() => {
+    if (!incomingCall) stopIncomingRing();
+  }, [incomingCall, stopIncomingRing]);
 
   return {
     incomingCall,
