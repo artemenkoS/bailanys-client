@@ -17,6 +17,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .name {
@@ -29,6 +31,12 @@
   margin-left: 8px;
   white-space: nowrap;
   opacity: 0.8;
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .messages {

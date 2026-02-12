@@ -7,8 +7,11 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
+import { useCallStore } from '../../../stores/callStore';
+import { useRoomCallStore } from '../../../stores/roomCallStore';
 import type { Profile } from '../../../types/auth';
 import type { ChatMessage } from '../../../types/chat';
+import { AudioCallButton } from '../../calls/components/AudioCallButton';
 import { useChatMessages } from '../hooks/useChatMessages';
 import { useDeleteChatMessage } from '../hooks/useDeleteChatMessage';
 import { useSendChatMessage } from '../hooks/useSendChatMessage';
@@ -37,6 +40,10 @@ export const ChatScreen = () => {
   const accessToken = useAuthStore((state) => state.session?.access_token);
   const userId = useAuthStore((state) => state.user?.id ?? '');
   const initialPeer = (location.state as ChatLocationState | null)?.peer ?? null;
+  const startCall = useCallStore((state) => state.startCall);
+  const callStatus = useCallStore((state) => state.status);
+  const roomStatus = useRoomCallStore((state) => state.status);
+  const roomId = useRoomCallStore((state) => state.roomId);
   const [draft, setDraft] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -63,6 +70,10 @@ export const ChatScreen = () => {
   const { isPeerTyping, onInputActivity, stopTyping } = useTypingIndicator(peerId ?? null);
 
   const orderedMessages = useMemo(() => sortByCreatedAt(messages), [messages]);
+  const isInRoom = Boolean(roomId);
+  const isCallBusy = callStatus !== 'idle' || roomStatus === 'joining' || isInRoom;
+  const callTargetId = peer?.id ?? peerId;
+  const unknownPeerLabel = t('chat.unknownUser');
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -128,6 +139,17 @@ export const ChatScreen = () => {
             </Text>
           ) : null}
         </Group>
+        <div className={styles.topActions}>
+          <AudioCallButton
+            targetId={callTargetId}
+            status={peer?.status}
+            size="lg"
+            iconSize={18}
+            disabled={isCallBusy}
+            unknownLabel={unknownPeerLabel}
+            onCall={(id) => startCall(id, 'audio')}
+          />
+        </div>
       </div>
 
       <ScrollArea

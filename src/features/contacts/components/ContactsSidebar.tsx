@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconCheck, IconMessageCircle, IconPhone, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
+import { IconCheck, IconMessageCircle, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +24,7 @@ import { useContacts } from '../hooks/useContacts';
 import { useContactSearch } from '../hooks/useContactSearch';
 import { useCreateContactRequest } from '../hooks/useCreateContactRequest';
 import { useUpdateContactRequest } from '../hooks/useUpdateContactRequest';
+import { AudioCallButton } from '../../calls/components/AudioCallButton';
 import styles from './ContactsSidebar.module.css';
 
 interface ContactsSidebarProps {
@@ -155,7 +156,6 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
   };
 
   const renderContactActions = (user: Profile) => {
-    const canCall = user.status === 'online';
     return (
       <Group gap={6} wrap="nowrap">
         <Tooltip label={t('chat.open')} withArrow>
@@ -163,17 +163,7 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
             <IconMessageCircle size={14} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label={canCall ? t('common.audioCall') : t(statusLabels[user.status] ?? 'common.offline')} withArrow>
-          <ActionIcon
-            variant="light"
-            color="indigo"
-            size="sm"
-            onClick={() => onStartCall(user.id, 'audio')}
-            disabled={!canCall}
-          >
-            <IconPhone size={14} />
-          </ActionIcon>
-        </Tooltip>
+        <AudioCallButton targetId={user.id} status={user.status} size="sm" iconSize={14} onCall={(id) => onStartCall(id, 'audio')} />
       </Group>
     );
   };
