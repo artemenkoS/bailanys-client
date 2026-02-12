@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
+import { useResizablePreview } from '../../hooks/useResizablePreview';
 import { MuteMicButton } from '../shared/MuteMicButton';
 import { ScreenShareButton } from '../shared/ScreenShareButton';
 import styles from './CallOverlay.module.css';
@@ -38,10 +39,15 @@ export const CallOverlay = () => {
   const hasScreenPreview = isRemoteSharing;
   const previewLabel = useMemo(() => t('calls.screenShareRemote'), [t]);
 
+  const { previewRef: screenPreviewRef, cardRef, handleResizeStart } = useResizablePreview({
+    enabled: hasScreenPreview,
+  });
+
   const canShareScreen = useMemo(() => {
     if (typeof navigator === 'undefined') return false;
     return Boolean(navigator.mediaDevices?.getDisplayMedia);
   }, []);
+
 
   const { data: callUserData } = useQuery({
     queryKey: ['call-user', lookupId],
@@ -134,10 +140,16 @@ export const CallOverlay = () => {
           className={styles.callCard}
           data-finished={isFinished}
           data-theme={getThemeColor()}
+          data-screen={hasScreenPreview}
+          ref={cardRef}
         >
           <Stack gap="sm">
             {hasScreenPreview && (
-              <div className={styles.screenPreview}>
+              <div
+                className={styles.screenPreview}
+                ref={screenPreviewRef}
+              >
+                <div className={styles.resizeHandle} onPointerDown={handleResizeStart} />
                 <Text size="xs" fw={600} className={styles.screenLabel}>
                   {previewLabel}
                 </Text>
