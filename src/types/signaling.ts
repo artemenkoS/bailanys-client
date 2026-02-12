@@ -12,6 +12,13 @@ export interface DirectSignalingMessage {
   candidate?: RTCIceCandidateInit;
 }
 
+export interface ScreenShareMessage {
+  type: 'screen-share';
+  to: string;
+  from?: string;
+  action: 'started' | 'stopped';
+}
+
 export interface RoomJoinMessage {
   type: 'join-room';
   roomId: string;
@@ -83,6 +90,6 @@ export type RoomSocketMessage =
   | RoomAnswerMessage
   | RoomIceMessage;
 
-export type SocketMessage = DirectSignalingMessage | RoomSocketMessage | ErrorMessage;
+export type SocketMessage = DirectSignalingMessage | ScreenShareMessage | RoomSocketMessage | ErrorMessage;
 
-export type SignalingMessage = DirectSignalingMessage;
+export type SignalingMessage = DirectSignalingMessage | ScreenShareMessage;

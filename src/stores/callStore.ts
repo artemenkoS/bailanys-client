@@ -9,6 +9,10 @@ export interface CallState {
   status: CallStatus;
   durationSeconds: number;
   isMicMuted: boolean;
+  isScreenSharing: boolean;
+  isRemoteScreenSharing: boolean;
+  localScreenStream: MediaStream | null;
+  remoteScreenStream: MediaStream | null;
 }
 
 export interface CallActions {
@@ -16,6 +20,7 @@ export interface CallActions {
   acceptCall: () => void;
   stopCall: (reason?: HangupReason) => void;
   toggleMicMute: () => void;
+  toggleScreenShare: () => void;
   cleanup: () => void;
 }
 
@@ -33,6 +38,10 @@ const initialState: CallState = {
   status: 'idle',
   durationSeconds: 0,
   isMicMuted: false,
+  isScreenSharing: false,
+  isRemoteScreenSharing: false,
+  localScreenStream: null,
+  remoteScreenStream: null,
 };
 
 const noopActions: CallActions = {
@@ -40,6 +49,7 @@ const noopActions: CallActions = {
   acceptCall: () => {},
   stopCall: () => {},
   toggleMicMute: () => {},
+  toggleScreenShare: () => {},
   cleanup: () => {},
 };
 

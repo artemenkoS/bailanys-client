@@ -41,6 +41,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
   const [activeCallTarget, setActiveCallTarget] = useState<string | null>(null);
   const [status, setStatus] = useState<CallStatus>('idle');
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+  const [isRemoteScreenSharing, setIsRemoteScreenSharing] = useState(false);
   const setCallState = useCallStore((state) => state.setState);
   const setCallActions = useCallStore((state) => state.setActions);
   const resetCallStore = useCallStore((state) => state.reset);
@@ -74,9 +75,14 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     handleRemoteOffer,
     handleRemoteAnswer,
     handleRemoteIceCandidate,
+    handleRemoteScreenShare,
     cleanup,
     isMicMuted,
     toggleMicMute,
+    isScreenSharing,
+    localScreenStream,
+    remoteScreenStream,
+    toggleScreenShare,
   } = useWebRTC(sendMessage);
 
   const getConnectedDuration = useCallback(() => {
@@ -110,6 +116,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     callTypeRef.current = 'audio';
     loggedRef.current = false;
     setCallDurationSeconds(0);
+    setIsRemoteScreenSharing(false);
   }, [stopDurationTimer]);
 
   const clearHistoryRefreshTimers = useCallback(() => {
@@ -180,6 +187,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     setIncomingCall(null);
     setStatus('idle');
     resetCallTracking();
+    setIsRemoteScreenSharing(false);
     if (cleanupTimerRef.current) {
       window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
@@ -276,6 +284,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       cleanup();
       persistCallHistory(reason, 'local');
       setStatus(reason);
+      setIsRemoteScreenSharing(false);
 
       if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = window.setTimeout(() => {
@@ -301,6 +310,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       callTypeRef.current = callType;
       loggedRef.current = false;
       setCallDurationSeconds(0);
+      setIsRemoteScreenSharing(false);
       setIncomingCall(null);
       setStatus('calling');
       setActiveCallTarget(targetId);
@@ -327,6 +337,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     callTypeRef.current = pendingCall.callType || 'audio';
     loggedRef.current = false;
     setActiveCallTarget(targetId);
+    setIsRemoteScreenSharing(false);
 
     try {
       stopIncomingRing();
@@ -359,8 +370,23 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       status,
       durationSeconds: callDurationSeconds,
       isMicMuted,
+      isScreenSharing,
+      isRemoteScreenSharing,
+      localScreenStream,
+      remoteScreenStream,
     });
-  }, [incomingCall, activeCallTarget, status, callDurationSeconds, isMicMuted, setCallState]);
+  }, [
+    incomingCall,
+    activeCallTarget,
+    status,
+    callDurationSeconds,
+    isMicMuted,
+    isScreenSharing,
+    isRemoteScreenSharing,
+    localScreenStream,
+    remoteScreenStream,
+    setCallState,
+  ]);
 
   useEffect(() => {
     setCallActions({
@@ -368,9 +394,10 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
       acceptCall,
       stopCall,
       toggleMicMute,
+      toggleScreenShare,
       cleanup,
     });
-  }, [setCallActions, startCall, acceptCall, stopCall, toggleMicMute, cleanup]);
+  }, [setCallActions, startCall, acceptCall, stopCall, toggleMicMute, toggleScreenShare, cleanup]);
 
   useEffect(() => {
     return () => {
@@ -407,6 +434,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
           callTypeRef.current = msg.callType || 'audio';
           loggedRef.current = false;
           setCallDurationSeconds(0);
+          setIsRemoteScreenSharing(false);
           void startIncomingRing();
           break;
 
@@ -438,10 +466,18 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
           const remoteReason: HangupReason = msg.reason === 'rejected' ? 'rejected' : 'ended';
           persistCallHistory(remoteReason, 'remote');
           setStatus(remoteReason);
+          setIsRemoteScreenSharing(false);
           if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
           cleanupTimerRef.current = window.setTimeout(() => {
             clearCallUI();
           }, 2500);
+          break;
+        }
+        case 'screen-share': {
+          const peerId = activeCallTargetRef.current || incomingCallRef.current?.from;
+          if (msg.from && peerId && msg.from !== peerId) break;
+          setIsRemoteScreenSharing(msg.action === 'started');
+          handleRemoteScreenShare(msg.action);
           break;
         }
       }
@@ -470,6 +506,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     stopDurationTimer,
     clearHistoryRefreshTimers,
     options,
+    handleRemoteScreenShare,
   ]);
 
   useEffect(() => {
@@ -492,5 +529,10 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     callDurationSeconds,
     isMicMuted,
     toggleMicMute,
+    isScreenSharing,
+    isRemoteScreenSharing,
+    localScreenStream,
+    remoteScreenStream,
+    toggleScreenShare,
   };
 };

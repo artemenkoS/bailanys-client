@@ -1,12 +1,14 @@
-import { ActionIcon, Avatar, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
+import { ActionIcon, Avatar, Badge, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
 import { MuteMicButton } from '../shared/MuteMicButton';
+import { ScreenShareButton } from '../shared/ScreenShareButton';
 import styles from './CallOverlay.module.css';
 
 export const CallOverlay = () => {
@@ -16,9 +18,13 @@ export const CallOverlay = () => {
   const status = useCallStore((state) => state.status);
   const durationSeconds = useCallStore((state) => state.durationSeconds);
   const isMicMuted = useCallStore((state) => state.isMicMuted);
+  const isScreenSharing = useCallStore((state) => state.isScreenSharing);
+  const isRemoteScreenSharing = useCallStore((state) => state.isRemoteScreenSharing);
+  const remoteScreenStream = useCallStore((state) => state.remoteScreenStream);
   const acceptCall = useCallStore((state) => state.acceptCall);
   const stopCall = useCallStore((state) => state.stopCall);
   const toggleMicMute = useCallStore((state) => state.toggleMicMute);
+  const toggleScreenShare = useCallStore((state) => state.toggleScreenShare);
   const accessToken = useAuthStore((state) => state.session?.access_token);
   const isEnded = status === 'ended';
   const isRejected = status === 'rejected';
@@ -26,6 +32,16 @@ export const CallOverlay = () => {
   const isFinished = isEnded || isRejected;
   const showDuration = status === 'connected' || (isFinished && durationSeconds > 0);
   const lookupId = activeCallTarget ?? incomingCall?.from ?? null;
+  const screenVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const isRemoteSharing = Boolean(remoteScreenStream) && isRemoteScreenSharing;
+  const hasScreenPreview = isRemoteSharing;
+  const previewLabel = useMemo(() => t('calls.screenShareRemote'), [t]);
+
+  const canShareScreen = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    return Boolean(navigator.mediaDevices?.getDisplayMedia);
+  }, []);
 
   const { data: callUserData } = useQuery({
     queryKey: ['call-user', lookupId],
@@ -63,6 +79,12 @@ export const CallOverlay = () => {
     if (isCalling) return t('calls.calling');
     return t('calls.inCall');
   };
+
+  useEffect(() => {
+    if (screenVideoRef.current) {
+      screenVideoRef.current.srcObject = remoteScreenStream ?? null;
+    }
+  }, [remoteScreenStream]);
 
   return (
     <>
@@ -113,44 +135,65 @@ export const CallOverlay = () => {
           data-finished={isFinished}
           data-theme={getThemeColor()}
         >
-          <Group justify="space-between" wrap="nowrap">
-            <Group gap="sm" wrap="nowrap" className={styles.callMeta}>
-              <Avatar color={getThemeColor()} radius="xl" variant={isFinished ? 'filled' : 'light'}>
-                {isFinished ? <IconX size={20} /> : <IconPhone size={20} />}
-              </Avatar>
-              <div className={styles.overflowHidden}>
-                <Text size="xs" fw={700} c={getThemeColor()} tt="uppercase" className={styles.statusText}>
-                  {getStatusLabel()}
+          <Stack gap="sm">
+            {hasScreenPreview && (
+              <div className={styles.screenPreview}>
+                <Text size="xs" fw={600} className={styles.screenLabel}>
+                  {previewLabel}
                 </Text>
-                <Text size="sm" fw={600} truncate>
-                  {t('calls.userLabel', { id: displayName })}
-                </Text>
-                {showDuration && (
-                  <Text size="xs" c="dimmed" mt={2}>
-                    {formatDuration(durationSeconds)}
-                  </Text>
+                <video ref={screenVideoRef} autoPlay playsInline muted className={styles.screenVideo} />
+                {isRemoteSharing && (
+                  <Badge size="xs" color="blue" variant="filled" className={styles.screenBadge}>
+                    {t('calls.screenSharing')}
+                  </Badge>
                 )}
               </div>
-            </Group>
-
-            {!isFinished && (
-              <Group gap="xs" wrap="nowrap" className={styles.callActions}>
-                <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
-                <ActionIcon
-                  color="red"
-                  size="xl"
-                  radius="md"
-                  variant="filled"
-                  onClick={() => stopCall('ended')}
-                  className={styles.hangupButton}
-                >
-                  <IconPhoneOff size={22} />
-                </ActionIcon>
-              </Group>
             )}
 
-            {isFinished && <IconCheck size={24} className={styles.finishedIcon} />}
-          </Group>
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap="sm" wrap="nowrap" className={styles.callMeta}>
+                <Avatar color={getThemeColor()} radius="xl" variant={isFinished ? 'filled' : 'light'}>
+                  {isFinished ? <IconX size={20} /> : <IconPhone size={20} />}
+                </Avatar>
+                <div className={styles.overflowHidden}>
+                  <Text size="xs" fw={700} c={getThemeColor()} tt="uppercase" className={styles.statusText}>
+                    {getStatusLabel()}
+                  </Text>
+                  <Text size="sm" fw={600} truncate>
+                    {t('calls.userLabel', { id: displayName })}
+                  </Text>
+                  {showDuration && (
+                    <Text size="xs" c="dimmed" mt={2}>
+                      {formatDuration(durationSeconds)}
+                    </Text>
+                  )}
+                </div>
+              </Group>
+
+              {!isFinished && (
+                <Group gap="xs" wrap="nowrap" className={styles.callActions}>
+                  <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
+                  <ScreenShareButton
+                    isSharing={isScreenSharing}
+                    onToggle={toggleScreenShare}
+                    disabled={!canShareScreen || status !== 'connected'}
+                  />
+                  <ActionIcon
+                    color="red"
+                    size="xl"
+                    radius="md"
+                    variant="filled"
+                    onClick={() => stopCall('ended')}
+                    className={styles.hangupButton}
+                  >
+                    <IconPhoneOff size={22} />
+                  </ActionIcon>
+                </Group>
+              )}
+
+              {isFinished && <IconCheck size={24} className={styles.finishedIcon} />}
+            </Group>
+          </Stack>
         </Card>
       )}
     </>

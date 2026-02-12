@@ -21,6 +21,8 @@ export const resources = {
         userBusy: 'User is busy',
         muteMic: 'Mute microphone',
         unmuteMic: 'Unmute microphone',
+        shareScreen: 'Share screen',
+        stopShare: 'Stop sharing',
         languages: {
           en: 'English',
           ru: 'Русский',
@@ -89,6 +91,9 @@ export const resources = {
         callRejected: 'Call Rejected',
         callingFrom: '{{user}} is calling...',
         userLabel: 'User {{id}}',
+        screenShareRemote: 'Screen share',
+        screenShareYou: 'Your screen',
+        screenSharing: 'Sharing',
       },
       rooms: {
         title: 'Rooms',
@@ -212,6 +217,8 @@ export const resources = {
         userBusy: 'Пользователь занят',
         muteMic: 'Выключить микрофон',
         unmuteMic: 'Включить микрофон',
+        shareScreen: 'Поделиться экраном',
+        stopShare: 'Остановить демонстрацию',
         languages: {
           en: 'English',
           ru: 'Русский',
@@ -284,6 +291,9 @@ export const resources = {
         callRejected: 'Звонок отклонён',
         callingFrom: '{{user}} звонит...',
         userLabel: 'Пользователь {{id}}',
+        screenShareRemote: 'Демонстрация экрана',
+        screenShareYou: 'Ваш экран',
+        screenSharing: 'Идёт демонстрация',
       },
       rooms: {
         title: 'Комнаты',
@@ -407,6 +417,8 @@ export const resources = {
         userBusy: 'Пайдаланушы бос емес',
         muteMic: 'Микрофонды өшіру',
         unmuteMic: 'Микрофонды қосу',
+        shareScreen: 'Экранды бөлісу',
+        stopShare: 'Бөлісуді тоқтату',
         languages: {
           en: 'English',
           ru: 'Русский',
@@ -473,6 +485,9 @@ export const resources = {
         callRejected: 'Қоңырау қабылданбады',
         callingFrom: '{{user}} қоңырау шалуда...',
         userLabel: 'Пайдаланушы {{id}}',
+        screenShareRemote: 'Экран көрсетілімі',
+        screenShareYou: 'Сіздің экраныңыз',
+        screenSharing: 'Көрсетіліп жатыр',
       },
       rooms: {
         title: 'Бөлмелер',
