@@ -19,12 +19,12 @@ import { useTranslation } from 'react-i18next';
 
 import type { Profile } from '../../../types/auth';
 import type { ContactSearchResult } from '../../../types/contacts';
+import { AudioCallButton } from '../../calls/components/AudioCallButton';
 import { useContactRequests } from '../hooks/useContactRequests';
 import { useContacts } from '../hooks/useContacts';
 import { useContactSearch } from '../hooks/useContactSearch';
 import { useCreateContactRequest } from '../hooks/useCreateContactRequest';
 import { useUpdateContactRequest } from '../hooks/useUpdateContactRequest';
-import { AudioCallButton } from '../../calls/components/AudioCallButton';
 import styles from './ContactsSidebar.module.css';
 
 interface ContactsSidebarProps {
