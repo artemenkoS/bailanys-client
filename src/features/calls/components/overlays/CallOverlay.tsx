@@ -1,7 +1,10 @@
 import { ActionIcon, Avatar, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
+import { apiService } from '../../../../services/api.service';
+import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
 import { MuteMicButton } from '../shared/MuteMicButton';
 import styles from './CallOverlay.module.css';
@@ -16,11 +19,28 @@ export const CallOverlay = () => {
   const acceptCall = useCallStore((state) => state.acceptCall);
   const stopCall = useCallStore((state) => state.stopCall);
   const toggleMicMute = useCallStore((state) => state.toggleMicMute);
+  const accessToken = useAuthStore((state) => state.session?.access_token);
   const isEnded = status === 'ended';
   const isRejected = status === 'rejected';
   const isCalling = status === 'calling';
   const isFinished = isEnded || isRejected;
   const showDuration = status === 'connected' || (isFinished && durationSeconds > 0);
+  const lookupId = activeCallTarget ?? incomingCall?.from ?? null;
+
+  const { data: callUserData } = useQuery({
+    queryKey: ['call-user', lookupId],
+    enabled: Boolean(accessToken && lookupId),
+    queryFn: async () => {
+      if (!accessToken || !lookupId) return null;
+      return apiService.getUserById(accessToken, lookupId);
+    },
+  });
+
+  const callUser = callUserData?.user ?? null;
+  const displayName =
+    callUser?.display_name ||
+    callUser?.username ||
+    (lookupId ? lookupId.slice(0, 12) : t('chat.unknownUser'));
 
   const formatDuration = (seconds: number) => {
     const safe = Math.max(0, Math.floor(seconds));
@@ -63,7 +83,7 @@ export const CallOverlay = () => {
           </Box>
           <Text fw={700} size="lg" ta="center">
             {t('calls.callingFrom', {
-              user: incomingCall?.from?.slice(0, 8) ?? '',
+              user: displayName,
             })}
           </Text>
           <Group mt="lg" grow className={styles.fullWidth}>
@@ -103,7 +123,7 @@ export const CallOverlay = () => {
                   {getStatusLabel()}
                 </Text>
                 <Text size="sm" fw={600} truncate>
-                  {t('calls.userLabel', { id: activeCallTarget.slice(0, 12) })}
+                  {t('calls.userLabel', { id: displayName })}
                 </Text>
                 {showDuration && (
                   <Text size="xs" c="dimmed" mt={2}>
