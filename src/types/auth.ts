@@ -46,3 +46,16 @@ export interface UpdateProfileData {
   avatarFile?: File | null;
   removeAvatar?: boolean;
 }
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  accessToken: string;
+  password: string;
+}
+
+export interface PasswordResetResponse {
+  success: boolean;
+}

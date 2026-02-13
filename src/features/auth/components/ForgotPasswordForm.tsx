@@ -1,6 +1,5 @@
 import { Button, Flex, Group, Stack, TextInput, Typography } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,31 +8,23 @@ import { ThemeToggle } from '../../../components/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
 import styles from './LoginForm.module.css';
 
-export const LoginForm = () => {
-  const { login, isLoggingIn, isAuthenticated } = useAuth();
+export const ForgotPasswordForm = () => {
+  const { requestPasswordReset, isRequestingPasswordReset } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const form = useForm({
     initialValues: {
       email: '',
-      password: '',
     },
 
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : t('auth.invalidEmail')),
-      password: (value) => (value.length < 6 ? t('auth.passwordTooShort') : null),
     },
   });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-
   const handleSubmit = form.onSubmit((values) => {
-    login(values);
+    requestPasswordReset({ email: values.email });
   });
 
   return (
@@ -42,7 +33,7 @@ export const LoginForm = () => {
       <form onSubmit={handleSubmit} className={styles.form}>
         <Stack gap="md">
           <Typography variant="h4" className={styles.title}>
-            {t('auth.loginTitle')}
+            {t('auth.forgotPasswordTitle')}
           </Typography>
 
           <TextInput
@@ -52,25 +43,14 @@ export const LoginForm = () => {
             {...form.getInputProps('email')}
           />
 
-          <TextInput
-            withAsterisk
-            label={t('auth.password')}
-            type="password"
-            placeholder={t('auth.passwordPlaceholder')}
-            {...form.getInputProps('password')}
-          />
-
-          <Button type="submit" fullWidth loading={isLoggingIn} mt="md">
-            {t('auth.loginButton')}
+          <Button type="submit" fullWidth loading={isRequestingPasswordReset} mt="md">
+            {t('auth.forgotPasswordButton')}
           </Button>
 
-          <Button variant="subtle" fullWidth onClick={() => navigate('/forgot-password')}>
-            {t('auth.gotoForgotPassword')}
+          <Button variant="subtle" fullWidth onClick={() => navigate('/login')}>
+            {t('auth.backToLogin')}
           </Button>
 
-          <Button variant="subtle" fullWidth onClick={() => navigate('/register')}>
-            {t('auth.gotoRegister')}
-          </Button>
           <Group justify="center">
             <LanguageSwitcher size="sm" />
           </Group>

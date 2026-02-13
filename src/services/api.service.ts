@@ -1,5 +1,14 @@
 import { useAuthStore } from '../stores/authStore';
-import type { AuthResponse, LoginData, Profile, RegisterData, UpdateProfileData } from '../types/auth';
+import type {
+  AuthResponse,
+  LoginData,
+  PasswordResetConfirm,
+  PasswordResetRequest,
+  PasswordResetResponse,
+  Profile,
+  RegisterData,
+  UpdateProfileData,
+} from '../types/auth';
 import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
 import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
 import type { ContactRequestsResponse, ContactSearchResult } from '../types/contacts';
@@ -95,6 +104,28 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async requestPasswordReset(data: PasswordResetRequest): Promise<PasswordResetResponse> {
+    return this.fetch<PasswordResetResponse>(
+      '/api/password-reset',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      { skipRefresh: true }
+    );
+  }
+
+  async confirmPasswordReset(data: PasswordResetConfirm): Promise<PasswordResetResponse> {
+    return this.fetch<PasswordResetResponse>(
+      '/api/password-reset/confirm',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      { skipRefresh: true }
+    );
   }
 
   async getProfile(token: string): Promise<{ profile: Profile }> {

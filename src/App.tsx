@@ -5,8 +5,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
+import { ForgotPasswordForm } from './features/auth/components/ForgotPasswordForm';
 import { LoginForm } from './features/auth/components/LoginForm';
 import { RegisterForm } from './features/auth/components/RegisterForm';
+import { ResetPasswordForm } from './features/auth/components/ResetPasswordForm';
+import { saveRecoverySession } from './features/auth/utils/recoverySession';
 import {
   clearSupabaseAuthParams,
   hasSupabaseAuthParams,
@@ -66,6 +69,17 @@ function AppRoutes() {
         return;
       }
 
+      if (redirectResult.type === 'recovery') {
+        saveRecoverySession(redirectResult.session);
+        notifications.show({
+          title: t('notifications.success'),
+          message: t('notifications.passwordResetReady'),
+          color: 'blue',
+        });
+        finish('/reset-password');
+        return;
+      }
+
       setAuth(redirectResult.user, redirectResult.session);
       notifications.show({
         title: t('notifications.success'),
@@ -95,6 +109,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/register" element={<RegisterForm />} />
       <Route path="/login" element={<LoginForm />} />
+      <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+      <Route path="/reset-password" element={<ResetPasswordForm />} />
       <Route
         path="/"
         element={

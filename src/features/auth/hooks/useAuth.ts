@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
-import type { LoginData, RegisterData } from '../../../types/auth';
+import type { LoginData, PasswordResetConfirm, PasswordResetRequest, RegisterData } from '../../../types/auth';
 
 export const useAuth = () => {
   const { t } = useTranslation();
@@ -61,6 +61,42 @@ export const useAuth = () => {
     },
   });
 
+  const passwordResetRequestMutation = useMutation({
+    mutationFn: (data: PasswordResetRequest) => apiService.requestPasswordReset(data),
+    onSuccess: () => {
+      notifications.show({
+        title: t('notifications.success'),
+        message: t('notifications.passwordResetEmailSent'),
+        color: 'blue',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: t('notifications.error'),
+        message: error.message || t('notifications.passwordResetEmailFailed'),
+        color: 'red',
+      });
+    },
+  });
+
+  const passwordResetConfirmMutation = useMutation({
+    mutationFn: (data: PasswordResetConfirm) => apiService.confirmPasswordReset(data),
+    onSuccess: () => {
+      notifications.show({
+        title: t('notifications.success'),
+        message: t('notifications.passwordResetSuccess'),
+        color: 'green',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: t('notifications.error'),
+        message: error.message || t('notifications.passwordResetFailed'),
+        color: 'red',
+      });
+    },
+  });
+
   const logout = () => {
     logoutStore();
     notifications.show({
@@ -76,8 +112,12 @@ export const useAuth = () => {
     isAuthenticated,
     register: registerMutation.mutate,
     login: loginMutation.mutate,
+    requestPasswordReset: passwordResetRequestMutation.mutate,
+    confirmPasswordReset: passwordResetConfirmMutation.mutateAsync,
     logout,
     isRegistering: registerMutation.isPending,
     isLoggingIn: loginMutation.isPending,
+    isRequestingPasswordReset: passwordResetRequestMutation.isPending,
+    isConfirmingPasswordReset: passwordResetConfirmMutation.isPending,
   };
 };
