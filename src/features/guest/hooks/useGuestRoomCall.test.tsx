@@ -38,8 +38,10 @@ class FakeWebSocket {
   readyState = FakeWebSocket.CONNECTING;
   sent: string[] = [];
   closeArgs: { code?: number; reason?: string } | null = null;
+  url: string;
 
-  constructor(public url: string) {
+  constructor(url: string) {
+    this.url = url;
     FakeWebSocket.instances.push(this);
   }
 
@@ -82,14 +84,15 @@ describe('useGuestRoomCall', () => {
 
     FakeWebSocket.instances = [];
     vi.stubGlobal('WebSocket', FakeWebSocket as unknown as typeof WebSocket);
-    if (!globalThis.atob) {
-      globalThis.atob = (value: string) => Buffer.from(value, 'base64').toString('binary');
-    }
   });
 
+  const toBase64Url = (value: string) => {
+    const base64 = btoa(unescape(encodeURIComponent(value)));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  };
+
   const buildToken = (payload: Record<string, unknown>) => {
-    const base64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-    return `${base64}.sig`;
+    return `${toBase64Url(JSON.stringify(payload))}.sig`;
   };
 
   it('returns error for invalid token', () => {
