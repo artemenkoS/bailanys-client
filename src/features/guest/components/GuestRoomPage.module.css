@@ -1,0 +1,27 @@
+.participants {
+  letter-spacing: 0.3px;
+}
+
+.memberRow {
+  width: 100%;
+}
+
+.memberBadge {
+  flex: 0 0 auto;
+}
+
+.volumeSlider {
+  flex: 0 1 auto;
+  width: clamp(140px, 28vw, 220px);
+  min-width: 120px;
+}
+
+.volumeValue {
+  text-align: right;
+  min-width: 36px;
+}
+
+.volumeIcon {
+  flex: 0 0 auto;
+  color: var(--mantine-color-dimmed);
+}

@@ -16,8 +16,31 @@ export type GuestRoomStatus = 'connecting' | 'joining' | 'joined' | 'error' | 'l
 
 type GuestTokenPayload = {
   roomId?: string;
-  guestId?: string;
   exp?: number;
+};
+
+const resolveGuestClientId = (token: string) => {
+  const storageKey = `guest-client-id:${token}`;
+  try {
+    const cached = sessionStorage.getItem(storageKey);
+    if (cached) return cached;
+  } catch {
+    // ignore storage failures
+  }
+
+  const uuid =
+    typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID()
+      : `${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`;
+  const guestId = `guest:${uuid}`;
+
+  try {
+    sessionStorage.setItem(storageKey, guestId);
+  } catch {
+    // ignore storage failures
+  }
+
+  return guestId;
 };
 
 const decodeGuestToken = (token: string | null): GuestTokenPayload | null => {
@@ -37,25 +60,31 @@ const decodeGuestToken = (token: string | null): GuestTokenPayload | null => {
 export const useGuestRoomCall = (guestToken: string | null) => {
   const decoded = useMemo(() => decodeGuestToken(guestToken), [guestToken]);
   const decodedRoomId = decoded?.roomId ?? null;
-  const decodedGuestId = decoded?.guestId ?? null;
-  const tokenError = useMemo(() => {
+  const decodedExp = decoded?.exp ?? null;
+  const baseTokenError = useMemo(() => {
     if (!guestToken) return 'guest.errors.invalidLink';
-    if (!decodedRoomId || !decodedGuestId) return 'guest.errors.invalidLink';
+    if (!decodedRoomId) return 'guest.errors.invalidLink';
+    if (typeof decodedExp !== 'number' || !Number.isFinite(decodedExp)) {
+      return 'guest.errors.invalidLink';
+    }
     return null;
-  }, [guestToken, decodedGuestId, decodedRoomId]);
+  }, [guestToken, decodedExp, decodedRoomId]);
 
   const [status, setStatusState] = useState<GuestRoomStatus>('connecting');
   const [roomId, setRoomId] = useState<string | null>(() => decodedRoomId);
   const [members, setMembers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(baseTokenError);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [selfId, setSelfId] = useState<string | null>(null);
+  const [memberVolumes, setMemberVolumes] = useState<Record<string, number>>({});
 
   const statusRef = useRef<GuestRoomStatus>('connecting');
   const socketRef = useRef<WebSocket | null>(null);
-  const selfIdRef = useRef<string | null>(decodedGuestId);
+  const selfIdRef = useRef<string | null>(null);
   const roomIdRef = useRef<string | null>(decodedRoomId);
   const isMicMutedRef = useRef(false);
+  const memberVolumesRef = useRef(new Map<string, number>());
 
   const { getRtcConfiguration } = useGuestRtcConfiguration(guestToken);
   const mesh = useRoomPeerMesh({
@@ -66,6 +95,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
       }
     },
     roomIdRef,
+    getInitialVolume: (peerId) => memberVolumesRef.current.get(peerId),
   });
   const {
     ensureLocalStream: ensureMeshLocalStream,
@@ -76,12 +106,17 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     handleRoomIce: handleMeshIce,
     cleanupPeer: cleanupMeshPeer,
     cleanupAll: cleanupMeshAll,
+    setPeerVolume: setMeshPeerVolume,
   } = mesh;
 
   const setStatus = useCallback((next: GuestRoomStatus) => {
     statusRef.current = next;
     setStatusState(next);
   }, []);
+
+  useEffect(() => {
+    setTokenError(baseTokenError);
+  }, [baseTokenError]);
 
   useEffect(() => {
     roomIdRef.current = roomId;
@@ -91,12 +126,9 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     if (decodedRoomId && roomIdRef.current !== decodedRoomId) {
       roomIdRef.current = decodedRoomId;
     }
-    if (decodedGuestId && selfIdRef.current !== decodedGuestId) {
-      selfIdRef.current = decodedGuestId;
-    }
-  }, [decodedGuestId, decodedRoomId]);
+  }, [decodedRoomId]);
 
-  const effectiveSelfId = selfId ?? decodedGuestId;
+  const effectiveSelfId = selfId;
 
   useEffect(() => {
     selfIdRef.current = effectiveSelfId;
@@ -112,13 +144,32 @@ export const useGuestRoomCall = (guestToken: string | null) => {
   const cleanupPeer = useCallback(
     (peerId: string) => {
       cleanupMeshPeer(peerId);
+      memberVolumesRef.current.delete(peerId);
+      setMemberVolumes((prev) => {
+        if (!(peerId in prev)) return prev;
+        const next = { ...prev };
+        delete next[peerId];
+        return next;
+      });
     },
-    [cleanupMeshPeer]
+    [cleanupMeshPeer, setMemberVolumes]
   );
 
   const releaseResources = useCallback(() => {
     cleanupMeshAll();
-  }, [cleanupMeshAll]);
+    memberVolumesRef.current.clear();
+    setMemberVolumes({});
+  }, [cleanupMeshAll, setMemberVolumes]);
+
+  const setMemberVolume = useCallback(
+    (peerId: string, volume: number) => {
+      const next = Math.min(1, Math.max(0, volume));
+      memberVolumesRef.current.set(peerId, next);
+      setMemberVolumes((prev) => (prev[peerId] === next ? prev : { ...prev, [peerId]: next }));
+      setMeshPeerVolume(peerId, next);
+    },
+    [setMeshPeerVolume]
+  );
 
   const sendMessage = useCallback((message: SocketMessage | object) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -162,15 +213,30 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     socketRef.current?.close(1000, 'Guest left');
   }, [releaseResources, sendMessage, setStatus]);
 
-
   useEffect(() => {
-    if (tokenError || !guestToken) {
+    if (baseTokenError || !guestToken) {
       statusRef.current = 'error';
+      return;
+    }
+    if (typeof decodedExp !== 'number' || !Number.isFinite(decodedExp)) {
+      statusRef.current = 'error';
+      return;
+    }
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (decodedExp <= nowSeconds) {
+      setTokenError('guest.errors.invalidLink');
+      setStatus('error');
+      setError('guest.errors.invalidLink');
       return;
     }
 
     const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
-    const socket = new WebSocket(`${WS_URL}?guest=${encodeURIComponent(guestToken)}`);
+    const clientGuestId = resolveGuestClientId(guestToken);
+    const socket = new WebSocket(
+      `${WS_URL}?guest=${encodeURIComponent(guestToken)}&guestId=${encodeURIComponent(
+        clientGuestId
+      )}`
+    );
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -349,7 +415,8 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     };
   }, [
     guestToken,
-    tokenError,
+    baseTokenError,
+    decodedExp,
     ensureMeshLocalStream,
     sendOfferToPeer,
     handleRoomOffer,
@@ -380,5 +447,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     toggleMicMute,
     leaveRoom,
     selfId: effectiveSelfId,
+    memberVolumes,
+    setMemberVolume,
   };
 };

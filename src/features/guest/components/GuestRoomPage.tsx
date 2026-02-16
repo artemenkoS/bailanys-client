@@ -1,11 +1,12 @@
-import { Badge, Button, Card, Center, Group, Loader, Stack, Text } from '@mantine/core';
-import { IconDoorExit } from '@tabler/icons-react';
+import { Badge, Button, Card, Center, Group, Loader, Slider, Stack, Text } from '@mantine/core';
+import { IconDoorExit, IconVolume2 } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useParams } from 'react-router-dom';
 
 import { MuteMicButton } from '../../calls/components/shared/MuteMicButton';
 import { useGuestRoomCall } from '../hooks/useGuestRoomCall';
+import styles from './GuestRoomPage.module.css';
 
 const statusColors: Record<string, string> = {
   connecting: 'gray',
@@ -19,7 +20,23 @@ export const GuestRoomPage = () => {
   const { t } = useTranslation();
   const { token } = useParams();
   const guestToken = token ?? null;
-  const { status, roomId, members, error, isMicMuted, toggleMicMute, leaveRoom } = useGuestRoomCall(guestToken);
+  const {
+    status,
+    roomId,
+    members,
+    error,
+    isMicMuted,
+    toggleMicMute,
+    leaveRoom,
+    selfId,
+    memberVolumes,
+    setMemberVolume,
+  } = useGuestRoomCall(guestToken);
+
+  const resolveMemberLabel = (id: string) => {
+    if (selfId && id === selfId) return t('rooms.you');
+    return id.slice(0, 8);
+  };
 
   const statusLabel = useMemo(() => {
     switch (status) {
@@ -76,9 +93,46 @@ export const GuestRoomPage = () => {
 
           {status === 'joined' && (
             <Stack gap="sm">
-              <Text size="sm" c="dimmed">
+              <Text size="sm" c="dimmed" className={styles.participants}>
                 {t('rooms.participants', { count: members.length })}
               </Text>
+              <Stack gap="xs">
+                {members.map((id) => {
+                  const isSelf = id === selfId;
+                  const volume = memberVolumes[id] ?? 1;
+                  const volumePercent = Math.round(volume * 100);
+                  return (
+                    <Group key={id} gap="sm" wrap="nowrap" className={styles.memberRow}>
+                      <Group gap={6} wrap="nowrap" className={styles.memberBadge}>
+                        <Badge color={isSelf ? 'indigo' : 'gray'} variant={isSelf ? 'filled' : 'light'}>
+                          {resolveMemberLabel(id)}
+                        </Badge>
+                      </Group>
+                      {!isSelf && (
+                        <>
+                          <IconVolume2 size={16} className={styles.volumeIcon} />
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={volumePercent}
+                            onChange={(value) => {
+                              if (typeof value !== 'number') return;
+                              setMemberVolume(id, value / 100);
+                            }}
+                            className={styles.volumeSlider}
+                            label={(value) => `${value}%`}
+                            aria-label={t('rooms.memberVolume', { user: resolveMemberLabel(id) })}
+                          />
+                          <Text size="xs" c="dimmed" className={styles.volumeValue}>
+                            {volumePercent}%
+                          </Text>
+                        </>
+                      )}
+                    </Group>
+                  );
+                })}
+              </Stack>
               <Group gap="xs" wrap="nowrap">
                 <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
                 <Button

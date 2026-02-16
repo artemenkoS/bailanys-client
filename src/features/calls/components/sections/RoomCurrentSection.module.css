@@ -2,6 +2,31 @@
   letter-spacing: 0.3px;
 }
 
+.headerRow {
+  width: 100%;
+}
+
+.actionGroup {
+  flex-wrap: nowrap;
+}
+
+.muteButton {
+  flex: 0 0 auto;
+}
+
+.actionButton {
+  flex: 0 0 auto;
+  font-weight: 400;
+}
+
+.actionIconButton {
+  --ai-size: 36px;
+}
+
+.actionButton :global(.mantine-Button-label) {
+  font-weight: 400 !important;
+}
+
 .memberRow {
   width: 100%;
 }
@@ -13,15 +38,35 @@
 }
 
 .volumeSlider {
-  flex: 1 1 auto;
-  min-width: 140px;
+  flex: 0 1 auto;
+  width: clamp(140px, 24vw, 240px);
+  min-width: 120px;
 }
 
 .volumeValue {
   text-align: right;
+  min-width: 36px;
 }
 
 .volumeIcon {
   flex: 0 0 auto;
   color: var(--mantine-color-dimmed);
+}
+
+@media (max-width: 768px) {
+  .headerRow {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actionGroup {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .actionButton {
+    flex: 1 auto;
+  }
 }

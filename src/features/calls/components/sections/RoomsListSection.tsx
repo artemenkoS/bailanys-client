@@ -1,11 +1,26 @@
-import { Avatar, Badge, Box, Button, Card, FileButton, Group, Loader, Menu, Stack, Text, UnstyledButton } from '@mantine/core';
-import { IconDoorEnter, IconMessage2, IconPencil } from '@tabler/icons-react';
+import {
+  ActionIcon,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Card,
+  FileButton,
+  Group,
+  Loader,
+  Menu,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
+import { IconDoorEnter, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { RoomsListActions, RoomsListKey, RoomsListUi } from '../../../../stores/roomsListStore';
 import { useRoomsListStore } from '../../../../stores/roomsListStore';
 import type { RoomMemberSummary, RoomSummary } from '../../../../types/rooms';
+import { RoomChatButton } from '../shared/RoomChatButton';
 import { RoomActionsMenu } from './RoomActionsMenu';
 import styles from './RoomsListSection.module.css';
 
@@ -107,18 +122,17 @@ const RoomCard = ({
   const actionButtons = ui.isMobile ? (
     <Stack gap="xs" w="100%">
       {showChat && (
-        <Button
+        <RoomChatButton
+          mode="button"
           size="xs"
-          variant="light"
-          leftSection={<IconMessage2 size={14} />}
           onClick={() => actions.onChat?.(room)}
+          disabled={ui.isActionDisabled}
           fullWidth
-        >
-          {t('rooms.chat')}
-        </Button>
+        />
       )}
       <Button
         size="xs"
+        variant="light"
         leftSection={<IconDoorEnter size={14} />}
         onClick={() => actions.onJoin(room)}
         disabled={ui.isActionDisabled}
@@ -131,23 +145,24 @@ const RoomCard = ({
   ) : (
     <Group gap="xs" wrap="nowrap">
       {showChat && (
-        <Button
-          size="xs"
-          variant="light"
-          leftSection={<IconMessage2 size={14} />}
+        <RoomChatButton
           onClick={() => actions.onChat?.(room)}
-        >
-          {t('rooms.chat')}
-        </Button>
+          disabled={ui.isActionDisabled}
+          className={styles.actionIcon}
+        />
       )}
-      <Button
-        size="xs"
-        leftSection={<IconDoorEnter size={14} />}
+      <ActionIcon
+        variant="filled"
+        color="indigo"
+        radius="md"
         onClick={() => actions.onJoin(room)}
         disabled={ui.isActionDisabled}
+        aria-label={t('rooms.join')}
+        title={t('rooms.join')}
+        className={styles.actionIcon}
       >
-        {t('rooms.join')}
-      </Button>
+        <IconDoorEnter size={16} />
+      </ActionIcon>
       {roomMenu}
     </Group>
   );

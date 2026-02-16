@@ -41,3 +41,14 @@
   flex: 1;
   min-width: 0;
 }
+
+.actionIcon {
+  --ai-size: 32px;
+  border-radius: var(--mantine-radius-md);
+}
+
+@media (max-width: 768px) {
+  .actionIcon {
+    --ai-size: 40px;
+  }
+}

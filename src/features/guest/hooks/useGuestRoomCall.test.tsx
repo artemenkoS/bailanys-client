@@ -104,7 +104,8 @@ describe('useGuestRoomCall', () => {
   });
 
   it('joins room and sends offers to peers', async () => {
-    const token = buildToken({ roomId: 'room-1', guestId: 'guest-1' });
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = buildToken({ roomId: 'room-1', exp });
     const { result } = renderHook(() => useGuestRoomCall(token));
 
     const socket = FakeWebSocket.instances[0];
@@ -128,7 +129,8 @@ describe('useGuestRoomCall', () => {
   });
 
   it('responds to presence checks', async () => {
-    const token = buildToken({ roomId: 'room-1', guestId: 'guest-1' });
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = buildToken({ roomId: 'room-1', exp });
     renderHook(() => useGuestRoomCall(token));
 
     const socket = FakeWebSocket.instances[0];
@@ -144,7 +146,8 @@ describe('useGuestRoomCall', () => {
   });
 
   it('cleans up when a member leaves', async () => {
-    const token = buildToken({ roomId: 'room-1', guestId: 'guest-1' });
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = buildToken({ roomId: 'room-1', exp });
     const { result } = renderHook(() => useGuestRoomCall(token));
 
     const socket = FakeWebSocket.instances[0];
@@ -170,7 +173,8 @@ describe('useGuestRoomCall', () => {
   });
 
   it('maps server errors and leaves on request', async () => {
-    const token = buildToken({ roomId: 'room-1', guestId: 'guest-1' });
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = buildToken({ roomId: 'room-1', exp });
     const { result } = renderHook(() => useGuestRoomCall(token));
 
     const socket = FakeWebSocket.instances[0];
@@ -197,7 +201,8 @@ describe('useGuestRoomCall', () => {
   it('handles mic denied on join', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     meshFns.ensureLocalStream.mockRejectedValueOnce(new Error('denied'));
-    const token = buildToken({ roomId: 'room-1', guestId: 'guest-1' });
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = buildToken({ roomId: 'room-1', exp });
     const { result } = renderHook(() => useGuestRoomCall(token));
 
     const socket = FakeWebSocket.instances[0];
@@ -219,5 +224,15 @@ describe('useGuestRoomCall', () => {
     expect(socket.sent.some((msg) => msg.includes('leave-room'))).toBe(true);
     expect(socket.closeArgs?.code).toBe(1000);
     errorSpy.mockRestore();
+  });
+
+  it('returns error for expired guest link', () => {
+    const exp = Math.floor(Date.now() / 1000) - 10;
+    const token = buildToken({ roomId: 'room-1', exp });
+    const { result } = renderHook(() => useGuestRoomCall(token));
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('guest.errors.invalidLink');
+    expect(FakeWebSocket.instances).toHaveLength(0);
   });
 });

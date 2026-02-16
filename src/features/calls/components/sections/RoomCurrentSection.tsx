@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications';
 import { IconCrown, IconCrownOff, IconDoorExit, IconLink, IconLinkPlus, IconVolume2 } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
@@ -13,6 +14,7 @@ import { useUpdateRoomMemberRole } from '../../../rooms/hooks/useUpdateRoomMembe
 import { useMyRooms } from '../../hooks/useMyRooms';
 import { useRooms } from '../../hooks/useRooms';
 import { MuteMicButton } from '../shared/MuteMicButton';
+import { RoomChatButton } from '../shared/RoomChatButton';
 import styles from './RoomCurrentSection.module.css';
 
 export const RoomCurrentSection = () => {
@@ -33,10 +35,16 @@ export const RoomCurrentSection = () => {
   const [isInviteLinkLoading, setIsInviteLinkLoading] = useState(false);
   const { data: roomMembersData } = useRoomMembers(roomId);
   const updateMemberRole = useUpdateRoomMemberRole();
+  const navigate = useNavigate();
 
   const handleLeaveRoom = useCallback(() => {
     leaveRoom();
   }, [leaveRoom]);
+
+  const handleOpenChat = useCallback(() => {
+    if (!roomId) return;
+    navigate(`/rooms/${roomId}/chat`);
+  }, [navigate, roomId]);
 
   const handleCreateGuestLink = useCallback(async () => {
     if (!roomId || !accessToken || isLinkLoading) return;
@@ -168,7 +176,7 @@ export const RoomCurrentSection = () => {
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between" wrap="nowrap">
+      <Group justify="space-between" wrap="nowrap" className={styles.headerRow}>
         <Group gap="sm" wrap="nowrap">
           <Avatar size="sm" radius="md" src={roomAvatarUrl || undefined} color="indigo">
             {roomLabel?.[0]?.toUpperCase() ?? '#'}
@@ -177,18 +185,21 @@ export const RoomCurrentSection = () => {
             {t('rooms.currentRoom', { id: roomLabel })}
           </Text>
         </Group>
-        <Group gap="xs" wrap="nowrap">
-          <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
+        <Group gap="xs" wrap="nowrap" className={styles.actionGroup}>
+          <div className={styles.muteButton}>
+            <MuteMicButton size="lg" isMuted={isMicMuted} onToggle={toggleMicMute} />
+          </div>
           {isAdmin && (
             <Button
               color="indigo"
               variant="light"
-              size="md"
+              size="sm"
               leftSection={<IconLinkPlus size={18} />}
               onClick={handleCreateInviteLink}
               loading={isInviteLinkLoading}
               disabled={!accessToken}
               radius="md"
+              className={styles.actionButton}
             >
               {t('rooms.inviteLink')}
             </Button>
@@ -196,22 +207,29 @@ export const RoomCurrentSection = () => {
           <Button
             color="indigo"
             variant="light"
-            size="md"
+            size="sm"
             leftSection={<IconLink size={18} />}
             onClick={handleCreateGuestLink}
             loading={isLinkLoading}
             disabled={!accessToken}
             radius="md"
+            className={styles.actionButton}
           >
             {t('rooms.guestLink')}
           </Button>
+          <RoomChatButton
+            onClick={handleOpenChat}
+            disabled={!roomId}
+            className={styles.actionIconButton}
+          />
           <Button
             color="red"
             variant="light"
-            size="md"
+            size="sm"
             leftSection={<IconDoorExit size={18} />}
             onClick={handleLeaveRoom}
             radius="md"
+            className={styles.actionButton}
           >
             {t('rooms.leave')}
           </Button>
@@ -231,8 +249,7 @@ export const RoomCurrentSection = () => {
           const isCreator = creatorIds.has(id);
           const isGuest = id.startsWith('guest:');
           const canToggleRole = Boolean(isAdmin && !isGuest && !isSelf && !isCreator);
-          const isUpdatingRole =
-            updateMemberRole.isPending && updateMemberRole.variables?.userId === id;
+          const isUpdatingRole = updateMemberRole.isPending && updateMemberRole.variables?.userId === id;
           return (
             <Group key={id} gap="sm" wrap="nowrap" className={styles.memberRow}>
               <Group gap={6} wrap="wrap" className={styles.memberBadge}>
@@ -295,7 +312,6 @@ export const RoomCurrentSection = () => {
           );
         })}
       </Stack>
-
     </Stack>
   );
 };
