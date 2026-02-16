@@ -1,5 +1,13 @@
 import { ActionIcon, Avatar, Badge, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
-import { IconCheck, IconPhone, IconPhoneOff, IconUsersGroup, IconX } from '@tabler/icons-react';
+import {
+  IconArrowsMaximize,
+  IconArrowsMinimize,
+  IconCheck,
+  IconPhone,
+  IconPhoneOff,
+  IconUsersGroup,
+  IconX,
+} from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -52,15 +60,25 @@ export const CallOverlay = () => {
   const showDirectCallCard = Boolean(activeCallTarget);
   const showRoomCallCard = !showDirectCallCard && Boolean(roomId);
 
-  const { previewRef: screenPreviewRef, cardRef, handleResizeStart } = useResizablePreview({
+  const {
+    previewRef: screenPreviewRef,
+    cardRef,
+    handleResizeStart,
+    isFullscreen,
+    toggleFullscreen,
+  } = useResizablePreview({
     enabled: hasScreenPreview,
+    videoRef: screenVideoRef,
   });
+  const fullscreenLabel = useMemo(
+    () => (isFullscreen ? t('calls.screenFullscreenExit') : t('calls.screenFullscreenEnter')),
+    [isFullscreen, t]
+  );
 
   const canShareScreen = useMemo(() => {
     if (typeof navigator === 'undefined') return false;
     return Boolean(navigator.mediaDevices?.getDisplayMedia);
   }, []);
-
 
   const { data: callUserData } = useQuery({
     queryKey: ['call-user', lookupId],
@@ -73,9 +91,7 @@ export const CallOverlay = () => {
 
   const callUser = callUserData?.user ?? null;
   const displayName =
-    callUser?.display_name ||
-    callUser?.username ||
-    (lookupId ? lookupId.slice(0, 12) : t('chat.unknownUser'));
+    callUser?.display_name || callUser?.username || (lookupId ? lookupId.slice(0, 12) : t('chat.unknownUser'));
   const rooms = useMemo(() => {
     const list = roomsData?.rooms ?? [];
     const mine = myRoomsData?.rooms ?? [];
@@ -175,15 +191,24 @@ export const CallOverlay = () => {
           data-finished={isFinished}
           data-theme={getThemeColor()}
           data-screen={hasScreenPreview}
+          data-fullscreen={isFullscreen}
           ref={cardRef}
         >
           <Stack gap="sm">
             {hasScreenPreview && (
-              <div
-                className={styles.screenPreview}
-                ref={screenPreviewRef}
-              >
-                <div className={styles.resizeHandle} onPointerDown={handleResizeStart} />
+              <div className={styles.screenPreview} ref={screenPreviewRef} data-fullscreen={isFullscreen}>
+                {!isFullscreen && <div className={styles.resizeHandle} onPointerDown={handleResizeStart} />}
+                <ActionIcon
+                  size="sm"
+                  radius="md"
+                  variant="filled"
+                  className={styles.fullscreenButton}
+                  onClick={toggleFullscreen}
+                  aria-label={fullscreenLabel}
+                  title={fullscreenLabel}
+                >
+                  {isFullscreen ? <IconArrowsMinimize size={16} /> : <IconArrowsMaximize size={16} />}
+                </ActionIcon>
                 <Text size="xs" fw={600} className={styles.screenLabel}>
                   {previewLabel}
                 </Text>
@@ -244,13 +269,7 @@ export const CallOverlay = () => {
       )}
 
       {showRoomCallCard && (
-        <Card
-          withBorder
-          shadow="xl"
-          p="sm"
-          className={styles.callCard}
-          data-theme={getRoomThemeColor()}
-        >
+        <Card withBorder shadow="xl" p="sm" className={styles.callCard} data-theme={getRoomThemeColor()}>
           <Stack gap="sm">
             <Group justify="space-between" wrap="nowrap">
               <Group gap="sm" wrap="nowrap" className={styles.callMeta}>

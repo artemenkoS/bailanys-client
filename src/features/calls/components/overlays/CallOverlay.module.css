@@ -44,6 +44,14 @@
   will-change: width;
 }
 
+.callCard[data-screen='true'][data-fullscreen='true'] {
+  left: 50%;
+  right: auto;
+  margin-left: 0;
+  margin-right: 0;
+  translate: -50% 0;
+}
+
 .callCard[data-resizing='true'] {
   transition: none;
 }
@@ -84,10 +92,15 @@
   min-width: 14rem;
   min-height: 8.5rem;
   max-width: 100%;
-  max-height: 22rem;
   border: 1px solid var(--mantine-color-gray-3);
   background: linear-gradient(135deg, var(--mantine-color-gray-1), var(--mantine-color-gray-2));
   will-change: width, height;
+}
+
+.screenPreview[data-fullscreen='true'] {
+  max-height: none;
+  min-width: 0;
+  min-height: 0;
 }
 
 .screenVideo {
@@ -130,6 +143,21 @@
 .resizeHandle::after {
   top: 10px;
   transform: rotate(45deg);
+}
+
+.fullscreenButton {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  z-index: 2;
+  background-color: rgba(15, 23, 42, 0.72);
+  color: var(--mantine-color-white);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.fullscreenButton:hover {
+  background-color: rgba(15, 23, 42, 0.85);
 }
 
 .screenLabel {

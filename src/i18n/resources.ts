@@ -94,6 +94,8 @@ export const resources = {
         screenShareRemote: 'Screen share',
         screenShareYou: 'Your screen',
         screenSharing: 'Sharing',
+        screenFullscreenEnter: 'Fullscreen',
+        screenFullscreenExit: 'Exit fullscreen',
       },
       rooms: {
         title: 'Rooms',
@@ -337,6 +339,8 @@ export const resources = {
         screenShareRemote: 'Демонстрация экрана',
         screenShareYou: 'Ваш экран',
         screenSharing: 'Идёт демонстрация',
+        screenFullscreenEnter: 'На весь экран',
+        screenFullscreenExit: 'Свернуть',
       },
       rooms: {
         title: 'Комнаты',
@@ -574,6 +578,8 @@ export const resources = {
         screenShareRemote: 'Экран көрсетілімі',
         screenShareYou: 'Сіздің экраныңыз',
         screenSharing: 'Көрсетіліп жатыр',
+        screenFullscreenEnter: 'Толық экран',
+        screenFullscreenExit: 'Қалпына келтіру',
       },
       rooms: {
         title: 'Бөлмелер',
