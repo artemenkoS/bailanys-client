@@ -145,7 +145,9 @@ describe('useWebRTC', () => {
       fillStyle: '#000',
       fillRect: vi.fn(),
     })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.captureStream = vi.fn(() => new FakeMediaStream([new FakeMediaStreamTrack('video')]));
+    HTMLCanvasElement.prototype.captureStream = vi.fn(
+      () => new FakeMediaStream([new FakeMediaStreamTrack('video')]) as unknown as MediaStream
+    ) as unknown as typeof HTMLCanvasElement.prototype.captureStream;
   });
 
   it('starts an audio call and sends an offer', async () => {
