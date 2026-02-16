@@ -14,6 +14,7 @@ import type {
   RoomUserLeftMessage,
   SocketMessage,
 } from '../../../types/signaling';
+import { useRoomPeerMesh } from '../webrtc/useRoomPeerMesh';
 import { useRtcConfiguration } from './useRtcConfiguration';
 import { useSocket } from './useSocket';
 
@@ -88,142 +89,41 @@ export const useRoomCallManager = () => {
 
   const roomIdRef = useRef<string | null>(null);
   const isMicMutedRef = useRef(false);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const peerConnectionsRef = useRef(new Map<string, RTCPeerConnection>());
-  const pendingCandidatesRef = useRef(new Map<string, RTCIceCandidateInit[]>());
-  const remoteAudioRef = useRef(new Map<string, HTMLAudioElement>());
   const peerVolumesRef = useRef(new Map<string, number>());
   const roomStartedAtRef = useRef<number | null>(null);
   const roomLoggedRef = useRef(false);
+  const mesh = useRoomPeerMesh({
+    getRtcConfiguration,
+    sendMessage,
+    roomIdRef,
+    getInitialVolume: (peerId) => peerVolumesRef.current.get(peerId),
+  });
+  const {
+    ensureLocalStream: ensureMeshLocalStream,
+    setMuted: setMeshMuted,
+    sendOfferToPeer: sendMeshOffer,
+    handleRoomOffer: handleMeshOffer,
+    handleRoomAnswer: handleMeshAnswer,
+    handleRoomIce: handleMeshIce,
+    cleanupPeer: cleanupMeshPeer,
+    cleanupAll: cleanupMeshAll,
+    setPeerVolume: setMeshPeerVolume,
+  } = mesh;
 
   useEffect(() => {
     roomIdRef.current = roomId;
   }, [roomId]);
 
-  const applyMuteState = useCallback((stream: MediaStream | null, muted: boolean) => {
-    if (!stream) return;
-    for (const track of stream.getAudioTracks()) {
-      track.enabled = !muted;
-    }
-  }, []);
-
   const toggleMicMute = useCallback(() => {
     const nextMuted = !isMicMutedRef.current;
     isMicMutedRef.current = nextMuted;
     setIsMicMuted(nextMuted);
-    applyMuteState(localStreamRef.current, nextMuted);
-  }, [applyMuteState, setIsMicMuted]);
-
-  const ensureRemoteAudio = useCallback((peerId: string) => {
-    const existing = remoteAudioRef.current.get(peerId);
-    if (existing) return existing;
-    const audio = new Audio();
-    audio.autoplay = true;
-    audio.muted = false;
-    const storedVolume = peerVolumesRef.current.get(peerId);
-    audio.volume = typeof storedVolume === 'number' ? storedVolume : 1;
-    audio.setAttribute('playsinline', 'true');
-    document.body.appendChild(audio);
-    remoteAudioRef.current.set(peerId, audio);
-    return audio;
-  }, []);
-
-  const cleanupRemoteAudio = useCallback((peerId: string) => {
-    const audio = remoteAudioRef.current.get(peerId);
-    if (!audio) return;
-    audio.srcObject = null;
-    audio.remove();
-    remoteAudioRef.current.delete(peerId);
-  }, []);
-
-  const applyLowLatencySender = useCallback(async (peer: RTCPeerConnection) => {
-    const sender = peer.getSenders().find((s) => s.track?.kind === 'audio');
-    if (!sender) return;
-
-    const p = sender.getParameters();
-    p.encodings = p.encodings?.length ? p.encodings : [{}];
-    p.encodings[0].priority = 'high';
-    p.encodings[0].networkPriority = 'high';
-
-    try {
-      await sender.setParameters(p);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const ensureLocalStream = useCallback(async () => {
-    if (localStreamRef.current) return localStreamRef.current;
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: false,
-      },
-    });
-    localStreamRef.current = stream;
-    applyMuteState(stream, isMicMutedRef.current);
-    return stream;
-  }, [applyMuteState]);
-
-  const attachLocalAudio = useCallback(async (peer: RTCPeerConnection) => {
-    const stream = localStreamRef.current;
-    if (!stream) return;
-    const track = stream.getAudioTracks()[0];
-    if (!track) return;
-    const existing = peer.getSenders().find((s) => s.track?.kind === 'audio');
-    if (existing) {
-      await existing.replaceTrack(track);
-      return;
-    }
-    peer.addTrack(track, stream);
-  }, []);
-
-  const createPeerConnection = useCallback(
-    async (peerId: string) => {
-      const existing = peerConnectionsRef.current.get(peerId);
-      if (existing) return existing;
-
-      const config = await getRtcConfiguration();
-      const existingAfter = peerConnectionsRef.current.get(peerId);
-      if (existingAfter) return existingAfter;
-
-      const peer = new RTCPeerConnection(config);
-      peerConnectionsRef.current.set(peerId, peer);
-
-      peer.onicecandidate = (event) => {
-        if (!event.candidate) return;
-        const currentRoomId = roomIdRef.current;
-        if (!currentRoomId) return;
-        sendMessage({
-          type: 'room-ice',
-          roomId: currentRoomId,
-          to: peerId,
-          candidate: event.candidate,
-        });
-      };
-
-      peer.ontrack = (event) => {
-        const audio = ensureRemoteAudio(peerId);
-        const [stream] = event.streams || [];
-        audio.srcObject = stream ?? new MediaStream([event.track]);
-        audio.play().catch(() => {});
-      };
-
-      return peer;
-    },
-    [ensureRemoteAudio, sendMessage, getRtcConfiguration]
-  );
+    setMeshMuted(nextMuted);
+  }, [setIsMicMuted, setMeshMuted]);
 
   const cleanupPeer = useCallback(
     (peerId: string) => {
-      const peer = peerConnectionsRef.current.get(peerId);
-      if (peer) {
-        peer.close();
-        peerConnectionsRef.current.delete(peerId);
-      }
-      pendingCandidatesRef.current.delete(peerId);
-      cleanupRemoteAudio(peerId);
+      cleanupMeshPeer(peerId);
       peerVolumesRef.current.delete(peerId);
       setPeerVolumes((prev) => {
         if (!(peerId in prev)) return prev;
@@ -232,16 +132,12 @@ export const useRoomCallManager = () => {
         return next;
       });
     },
-    [cleanupRemoteAudio, setPeerVolumes]
+    [cleanupMeshPeer, setPeerVolumes]
   );
 
   const releaseResources = useCallback(() => {
-    for (const peerId of peerConnectionsRef.current.keys()) {
-      cleanupPeer(peerId);
-    }
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    localStreamRef.current = null;
-  }, [cleanupPeer]);
+    cleanupMeshAll();
+  }, [cleanupMeshAll]);
 
   const cleanupRoom = useCallback(() => {
     releaseResources();
@@ -263,10 +159,9 @@ export const useRoomCallManager = () => {
       const next = Math.min(1, Math.max(0, volume));
       peerVolumesRef.current.set(peerId, next);
       setPeerVolumes((prev) => (prev[peerId] === next ? prev : { ...prev, [peerId]: next }));
-      const audio = remoteAudioRef.current.get(peerId);
-      if (audio) audio.volume = next;
+      setMeshPeerVolume(peerId, next);
     },
-    [setPeerVolumes]
+    [setMeshPeerVolume, setPeerVolumes]
   );
 
   const persistRoomHistory = useCallback(
@@ -306,79 +201,32 @@ export const useRoomCallManager = () => {
   );
 
   const sendOfferToPeer = useCallback(
-    async (peerId: string, currentRoomId: string) => {
-      const peer = await createPeerConnection(peerId);
-      await ensureLocalStream();
-      await attachLocalAudio(peer);
-      await applyLowLatencySender(peer);
-
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-
-      sendMessage({
-        type: 'room-offer',
-        roomId: currentRoomId,
-        to: peerId,
-        offer,
-        callType: 'audio',
-      });
+    async (peerId: string) => {
+      await sendMeshOffer(peerId);
     },
-    [createPeerConnection, ensureLocalStream, attachLocalAudio, applyLowLatencySender, sendMessage]
+    [sendMeshOffer]
   );
 
   const handleRoomOffer = useCallback(
     async (msg: RoomOfferMessage) => {
-      if (!msg.from) return;
-      const peer = await createPeerConnection(msg.from);
-
-      await peer.setRemoteDescription(msg.offer);
-      await ensureLocalStream();
-      await attachLocalAudio(peer);
-      await applyLowLatencySender(peer);
-
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-
-      sendMessage({
-        type: 'room-answer',
-        roomId: msg.roomId,
-        to: msg.from,
-        answer,
-      });
-
-      const pending = pendingCandidatesRef.current.get(msg.from) || [];
-      for (const candidate of pending) {
-        await peer.addIceCandidate(candidate);
-      }
-      pendingCandidatesRef.current.delete(msg.from);
+      await handleMeshOffer(msg);
     },
-    [createPeerConnection, ensureLocalStream, attachLocalAudio, applyLowLatencySender, sendMessage]
+    [handleMeshOffer]
   );
 
-  const handleRoomAnswer = useCallback(async (msg: RoomAnswerMessage) => {
-    if (!msg.from) return;
-    const peer = peerConnectionsRef.current.get(msg.from);
-    if (!peer) return;
-    await peer.setRemoteDescription(msg.answer);
+  const handleRoomAnswer = useCallback(
+    async (msg: RoomAnswerMessage) => {
+      await handleMeshAnswer(msg);
+    },
+    [handleMeshAnswer]
+  );
 
-    const pending = pendingCandidatesRef.current.get(msg.from) || [];
-    for (const candidate of pending) {
-      await peer.addIceCandidate(candidate);
-    }
-    pendingCandidatesRef.current.delete(msg.from);
-  }, []);
-
-  const handleRoomIceCandidate = useCallback(async (msg: RoomIceMessage) => {
-    if (!msg.from) return;
-    const peer = peerConnectionsRef.current.get(msg.from);
-    if (peer?.remoteDescription) {
-      await peer.addIceCandidate(msg.candidate);
-      return;
-    }
-    const pending = pendingCandidatesRef.current.get(msg.from) || [];
-    pending.push(msg.candidate);
-    pendingCandidatesRef.current.set(msg.from, pending);
-  }, []);
+  const handleRoomIceCandidate = useCallback(
+    async (msg: RoomIceMessage) => {
+      await handleMeshIce(msg);
+    },
+    [handleMeshIce]
+  );
 
   const joinRoom = useCallback(
     (nextRoomId: string, options?: { password?: string }) => {
@@ -464,7 +312,7 @@ export const useRoomCallManager = () => {
           const peers = payload.users.filter((id) => id !== userId);
           if (peers.length > 0) {
             try {
-              await ensureLocalStream();
+              await ensureMeshLocalStream();
             } catch (err) {
               console.error('Failed to access microphone:', err);
               leaveRoom('failed');
@@ -474,7 +322,7 @@ export const useRoomCallManager = () => {
 
             for (const peerId of peers) {
               try {
-                await sendOfferToPeer(peerId, payload.roomId);
+                await sendOfferToPeer(peerId);
               } catch (err) {
                 console.error('Failed to send offer:', err);
               }
@@ -576,7 +424,7 @@ export const useRoomCallManager = () => {
   }, [
     socket,
     userId,
-    ensureLocalStream,
+    ensureMeshLocalStream,
     sendOfferToPeer,
     handleRoomOffer,
     handleRoomAnswer,

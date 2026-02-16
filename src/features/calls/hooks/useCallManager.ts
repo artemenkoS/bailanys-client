@@ -504,6 +504,7 @@ export const useCallManager = (options: CallManagerOptions = {}) => {
     persistCallHistory,
     startDurationTimer,
     stopDurationTimer,
+    startIncomingRing,
     clearHistoryRefreshTimers,
     options,
     handleRemoteScreenShare,

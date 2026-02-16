@@ -1,8 +1,10 @@
 import { Avatar, Badge, Button, Group, Slider, Stack, Text } from '@mantine/core';
-import { IconDoorExit, IconVolume2 } from '@tabler/icons-react';
-import { useCallback, useMemo } from 'react';
+import { notifications } from '@mantine/notifications';
+import { IconDoorExit, IconLink, IconVolume2 } from '@tabler/icons-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useRoomCallStore } from '../../../../stores/roomCallStore';
 import { useOnlineUsers } from '../../../contacts/hooks/useOnlineUsers';
@@ -17,6 +19,7 @@ export const RoomCurrentSection = () => {
   const { data: myRoomsData } = useMyRooms();
   const { data: onlineUsers } = useOnlineUsers();
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const accessToken = useAuthStore((state) => state.session?.access_token ?? '');
   const roomId = useRoomCallStore((state) => state.roomId);
   const members = useRoomCallStore((state) => state.members);
   const memberVolumes = useRoomCallStore((state) => state.peerVolumes);
@@ -24,10 +27,47 @@ export const RoomCurrentSection = () => {
   const toggleMicMute = useRoomCallStore((state) => state.toggleMicMute);
   const leaveRoom = useRoomCallStore((state) => state.leaveRoom);
   const setMemberVolume = useRoomCallStore((state) => state.setPeerVolume);
+  const [isLinkLoading, setIsLinkLoading] = useState(false);
 
   const handleLeaveRoom = useCallback(() => {
     leaveRoom();
   }, [leaveRoom]);
+
+  const handleCreateGuestLink = useCallback(async () => {
+    if (!roomId || !accessToken || isLinkLoading) return;
+    setIsLinkLoading(true);
+    try {
+      const response = await apiService.createRoomGuestLink(accessToken, { roomId });
+      const guestToken = response.token;
+      if (!guestToken) throw new Error('Guest token missing');
+      const url = `${window.location.origin}/guest/${guestToken}`;
+
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      notifications.show({
+        title: t('notifications.success'),
+        message: copied ? t('rooms.guestLinkCopied') : t('rooms.guestLinkReady', { url }),
+        color: copied ? 'green' : 'blue',
+      });
+    } catch (error) {
+      console.error('Failed to create guest link:', error);
+      notifications.show({
+        title: t('notifications.error'),
+        message: t('rooms.guestLinkFailed'),
+        color: 'red',
+      });
+    } finally {
+      setIsLinkLoading(false);
+    }
+  }, [roomId, accessToken, isLinkLoading, t]);
 
   const rooms = useMemo(() => roomsData?.rooms ?? [], [roomsData?.rooms]);
   const myRooms = useMemo(() => myRoomsData?.rooms ?? [], [myRoomsData?.rooms]);
@@ -73,6 +113,18 @@ export const RoomCurrentSection = () => {
         </Group>
         <Group gap="xs" wrap="nowrap">
           <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
+          <Button
+            color="indigo"
+            variant="light"
+            size="md"
+            leftSection={<IconLink size={18} />}
+            onClick={handleCreateGuestLink}
+            loading={isLinkLoading}
+            disabled={!accessToken}
+            radius="md"
+          >
+            {t('rooms.guestLink')}
+          </Button>
           <Button
             color="red"
             variant="light"

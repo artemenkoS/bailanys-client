@@ -348,6 +348,31 @@ class ApiService {
       body: JSON.stringify({ id: roomId }),
     });
   }
+
+  async createRoomGuestLink(
+    token: string,
+    data: { roomId: string; ttlSeconds?: number }
+  ): Promise<{ token: string; expiresAt?: string }> {
+    return this.fetch<{ token: string; expiresAt?: string }>('/api/rooms/guest-link', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGuestIceServers(guestToken: string): Promise<{ iceServers: RTCIceServer[]; ttlSeconds?: number }> {
+    return this.fetch<{ iceServers: RTCIceServer[]; ttlSeconds?: number }>(
+      `/api/guest/ice-servers`,
+      {
+        headers: {
+          Authorization: `Bearer ${guestToken}`,
+        },
+      },
+      { skipRefresh: true }
+    );
+  }
 }
 
 export const apiService = new ApiService();

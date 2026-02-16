@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { SignalingMessage } from '../../../types/signaling';
+import { applyLowLatencySender, applyMuteState, getMicStream } from '../webrtc/webrtcUtils';
 import { useRtcConfiguration } from './useRtcConfiguration';
 
 export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
@@ -38,39 +39,6 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
       remoteAudio.current = a;
     }
     return remoteAudio.current!;
-  }, []);
-
-  const applyLowLatencySender = useCallback(async (peer: RTCPeerConnection) => {
-    const sender = peer.getSenders().find((s) => s.track?.kind === 'audio');
-    if (!sender) return;
-
-    const p = sender.getParameters();
-    p.encodings = p.encodings?.length ? p.encodings : [{}];
-    p.encodings[0].priority = 'high';
-    p.encodings[0].networkPriority = 'high';
-
-    try {
-      await sender.setParameters(p);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const getMicStream = useCallback(async () => {
-    return navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: false,
-      },
-    });
-  }, []);
-
-  const applyMuteState = useCallback((stream: MediaStream | null, muted: boolean) => {
-    if (!stream) return;
-    for (const track of stream.getAudioTracks()) {
-      track.enabled = !muted;
-    }
   }, []);
 
   const clearRemoteScreen = useCallback(() => {
@@ -134,7 +102,7 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
     isMicMutedRef.current = nextMuted;
     setIsMicMuted(nextMuted);
     applyMuteState(localStream.current, nextMuted);
-  }, [applyMuteState]);
+  }, []);
 
   const stopScreenShare = useCallback(() => {
     isScreenSharingRef.current = false;
@@ -307,11 +275,8 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
     [
       initPeerConnection,
       sendMessage,
-      getMicStream,
-      applyLowLatencySender,
       attachLocalAudio,
       attachPlaceholderVideo,
-      applyMuteState,
     ]
   );
 
@@ -357,11 +322,8 @@ export const useWebRTC = (sendMessage: (msg: SignalingMessage) => void) => {
     [
       initPeerConnection,
       sendMessage,
-      getMicStream,
-      applyLowLatencySender,
       attachLocalAudio,
       attachPlaceholderVideo,
-      applyMuteState,
     ]
   );
 

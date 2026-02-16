@@ -36,6 +36,7 @@ export interface RoomJoinedMessage {
   type: 'room-joined';
   roomId: string;
   users: string[];
+  selfId?: string;
 }
 
 export interface RoomUserJoinedMessage {
