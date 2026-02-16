@@ -49,6 +49,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
   const [members, setMembers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
+  const [selfId, setSelfId] = useState<string | null>(decodedGuestId);
 
   const statusRef = useRef<GuestRoomStatus>('connecting');
   const socketRef = useRef<WebSocket | null>(null);
@@ -92,6 +93,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     }
     if (decodedGuestId && selfIdRef.current !== decodedGuestId) {
       selfIdRef.current = decodedGuestId;
+      setSelfId(decodedGuestId);
     }
   }, [decodedGuestId, decodedRoomId]);
 
@@ -155,6 +157,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     socketRef.current?.close(1000, 'Guest left');
   }, [releaseResources, sendMessage, setStatus]);
 
+
   useEffect(() => {
     if (tokenError || !guestToken) {
       statusRef.current = 'error';
@@ -194,7 +197,10 @@ export const useGuestRoomCall = (guestToken: string | null) => {
           setError(null);
           setRoomId(payload.roomId);
           roomIdRef.current = payload.roomId;
-          if (payload.selfId) selfIdRef.current = payload.selfId;
+          if (payload.selfId) {
+            selfIdRef.current = payload.selfId;
+            setSelfId(payload.selfId);
+          }
           setMembers(payload.users);
 
           const selfId = selfIdRef.current;
@@ -283,6 +289,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
         }
         case 'error': {
           const errorMessage = (typedMsg as { message?: string }).message ?? '';
+          if (errorMessage === 'Message too long') break;
           switch (errorMessage) {
             case 'Room not found':
               setError('rooms.errors.notFound');
@@ -367,5 +374,6 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     isMicMuted,
     toggleMicMute,
     leaveRoom,
+    selfId,
   };
 };

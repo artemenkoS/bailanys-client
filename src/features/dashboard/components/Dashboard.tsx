@@ -18,6 +18,7 @@ import { useCallHistory } from '../../calls/hooks/useCallHistory';
 import { useCallManager } from '../../calls/hooks/useCallManager';
 import { useRoomCallManager } from '../../calls/hooks/useRoomCallManager';
 import { ChatScreen } from '../../chat/components/ChatScreen';
+import { RoomChatScreen } from '../../chat/components/RoomChatScreen';
 import { ProfileEditModal } from '../../profile/components/ProfileEditModal';
 import styles from './Dashboard.module.css';
 
@@ -25,7 +26,7 @@ export const Dashboard = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { peerId } = useParams();
+  const { peerId, roomId: chatRoomId } = useParams();
   const [opened, { toggle }] = useDisclosure();
   const [profileOpened, { open: openProfile, close: closeProfile }] = useDisclosure(false);
   const { data: callHistoryData, isLoading: isCallHistoryLoading, isError: isCallHistoryError } = useCallHistory();
@@ -74,9 +75,11 @@ export const Dashboard = () => {
     navigate(`/chat/${peer.id}`, { state: { peer } });
   };
 
+  const isChatRoute = Boolean(peerId || chatRoomId);
+
   return (
     <AppShell
-      className={peerId ? styles.shellChat : undefined}
+      className={isChatRoute ? styles.shellChat : undefined}
       header={{ height: 70 }}
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
@@ -98,9 +101,11 @@ export const Dashboard = () => {
         onOpenChat={handleOpenChat}
       />
 
-      <AppShell.Main className={peerId ? styles.mainChat : undefined}>
+      <AppShell.Main className={isChatRoute ? styles.mainChat : undefined}>
         {peerId ? (
           <ChatScreen />
+        ) : chatRoomId ? (
+          <RoomChatScreen />
         ) : (
           <>
             <RoomPanel />

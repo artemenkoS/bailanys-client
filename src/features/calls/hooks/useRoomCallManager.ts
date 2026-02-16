@@ -87,6 +87,7 @@ export const useRoomCallManager = () => {
     [setRoomState]
   );
 
+
   const roomIdRef = useRef<string | null>(null);
   const isMicMutedRef = useRef(false);
   const peerVolumesRef = useRef(new Map<string, number>());
@@ -227,6 +228,7 @@ export const useRoomCallManager = () => {
     },
     [handleMeshIce]
   );
+
 
   const joinRoom = useCallback(
     (nextRoomId: string, options?: { password?: string }) => {
@@ -376,6 +378,9 @@ export const useRoomCallManager = () => {
           break;
         }
         case 'error': {
+          if (msg.message === 'Message too long') {
+            break;
+          }
           switch (msg.message) {
             case 'Room not found':
               setError('rooms.errors.notFound');

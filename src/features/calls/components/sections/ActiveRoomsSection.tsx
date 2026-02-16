@@ -1,5 +1,6 @@
 import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { useCallStore } from '../../../../stores/callStore';
 import { useRoomCallStore } from '../../../../stores/roomCallStore';
@@ -9,6 +10,7 @@ import { RoomsListSection } from './RoomsListSection';
 
 export const ActiveRoomsSection = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: roomsData, isLoading, isError } = useRooms();
   const isMobile = useMediaQuery('(max-width: 48em)');
   const callStatus = useCallStore((state) => state.status);
@@ -29,6 +31,7 @@ export const ActiveRoomsSection = () => {
       isMobile={isMobile}
       isActionDisabled={isActionDisabled}
       onJoin={onJoin}
+      onChat={(room) => navigate(`/rooms/${room.id}/chat`)}
     />
   );
 };

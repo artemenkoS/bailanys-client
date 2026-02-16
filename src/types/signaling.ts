@@ -1,3 +1,5 @@
+import type { RoomChatMessage } from './roomChat';
+
 export type CallType = 'audio' | 'video';
 export type HangupReason = 'ended' | 'rejected';
 
@@ -76,6 +78,34 @@ export interface RoomIceMessage {
   candidate: RTCIceCandidateInit;
 }
 
+export interface RoomChatSendMessage {
+  type: 'room-message';
+  roomId: string;
+  body: string;
+}
+
+export interface RoomChatJoinMessage {
+  type: 'join-room-chat';
+  roomId: string;
+}
+
+export interface RoomChatLeaveMessage {
+  type: 'leave-room-chat';
+  roomId: string;
+}
+
+export interface RoomChatMessageEvent {
+  type: 'room-message';
+  roomId: string;
+  message: RoomChatMessage;
+}
+
+export interface RoomChatHistoryEvent {
+  type: 'room-messages';
+  roomId: string;
+  messages: RoomChatMessage[];
+}
+
 export interface ErrorMessage {
   type: 'error';
   message: string;
@@ -89,7 +119,12 @@ export type RoomSocketMessage =
   | RoomUserLeftMessage
   | RoomOfferMessage
   | RoomAnswerMessage
-  | RoomIceMessage;
+  | RoomIceMessage
+  | RoomChatSendMessage
+  | RoomChatJoinMessage
+  | RoomChatLeaveMessage
+  | RoomChatMessageEvent
+  | RoomChatHistoryEvent;
 
 export type SocketMessage = DirectSignalingMessage | ScreenShareMessage | RoomSocketMessage | ErrorMessage;
 

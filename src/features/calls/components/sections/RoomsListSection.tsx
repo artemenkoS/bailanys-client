@@ -12,7 +12,7 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconDoorEnter, IconPencil } from '@tabler/icons-react';
+import { IconDoorEnter, IconMessage2, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,6 +28,7 @@ interface RoomsListSectionProps<T extends RoomSummary> {
   isMobile: boolean;
   isActionDisabled: boolean;
   onJoin: (room: RoomSummary) => void;
+  onChat?: (room: RoomSummary) => void;
   onDelete?: (room: RoomOwnerSummary) => void;
   deleteRoomId?: string | null;
   onAvatarChange?: (room: RoomOwnerSummary, file: File) => void;
@@ -41,6 +42,7 @@ const RoomCard = ({
   isMobile,
   isActionDisabled,
   onJoin,
+  onChat,
   onDelete,
   deleteRoomId,
   onAvatarChange,
@@ -52,6 +54,7 @@ const RoomCard = ({
   isMobile: boolean;
   isActionDisabled: boolean;
   onJoin: (room: RoomSummary) => void;
+  onChat?: (room: RoomSummary) => void;
   onDelete?: (room: RoomOwnerSummary) => void;
   deleteRoomId?: string | null;
   onAvatarChange?: (room: RoomOwnerSummary, file: File) => void;
@@ -63,6 +66,7 @@ const RoomCard = ({
   const isOwnerRoom = 'isActive' in room;
   const isInactive = showInactiveBadge && isOwnerRoom && !room.isActive;
   const showDelete = Boolean(onDelete);
+  const showChat = Boolean(onChat);
   const showAvatarActions = Boolean(onAvatarChange) && isOwnerRoom;
   const isAvatarUpdating = avatarUpdatingRoomId === room.id;
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
@@ -127,6 +131,17 @@ const RoomCard = ({
 
   const actionButtons = isMobile ? (
     <Stack gap="xs" w="100%">
+      {showChat && (
+        <Button
+          size="xs"
+          variant="light"
+          leftSection={<IconMessage2 size={14} />}
+          onClick={() => onChat?.(room)}
+          fullWidth
+        >
+          {t('rooms.chat')}
+        </Button>
+      )}
       <Button
         size="xs"
         leftSection={<IconDoorEnter size={14} />}
@@ -152,6 +167,11 @@ const RoomCard = ({
     </Stack>
   ) : (
     <Group gap="xs" wrap="nowrap">
+      {showChat && (
+        <Button size="xs" variant="light" leftSection={<IconMessage2 size={14} />} onClick={() => onChat?.(room)}>
+          {t('rooms.chat')}
+        </Button>
+      )}
       <Button
         size="xs"
         leftSection={<IconDoorEnter size={14} />}
@@ -220,6 +240,7 @@ export const RoomsListSection = <T extends RoomSummary>({
   isMobile,
   isActionDisabled,
   onJoin,
+  onChat,
   onDelete,
   deleteRoomId,
   onAvatarChange,
@@ -254,6 +275,7 @@ export const RoomsListSection = <T extends RoomSummary>({
               isMobile={isMobile}
               isActionDisabled={isActionDisabled}
               onJoin={onJoin}
+              onChat={onChat}
               onDelete={onDelete}
               deleteRoomId={deleteRoomId}
               onAvatarChange={onAvatarChange}

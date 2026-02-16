@@ -1,4 +1,4 @@
-import { ActionIcon, Avatar, Group, ScrollArea, Stack, Text, Textarea } from '@mantine/core';
+import { ActionIcon, Avatar, Center, Group, Loader, ScrollArea, Stack, Text, Textarea } from '@mantine/core';
 import { IconArrowLeft, IconEdit, IconSend, IconTrash, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -159,9 +159,9 @@ export const ChatScreen = () => {
         classNames={{ viewport: styles.messagesViewport }}
       >
         {isLoading ? (
-          <Text size="sm" c="dimmed">
-            {t('chat.loading')}
-          </Text>
+          <Center mih={200}>
+            <Loader size="sm" />
+          </Center>
         ) : isError ? (
           <Text size="sm" c="red">
             {t('chat.loadError')}

@@ -13,6 +13,7 @@ import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHis
 import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
 import type { ContactRequestsResponse, ContactSearchResult } from '../types/contacts';
 import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
+import type { RoomChatMessage } from '../types/roomChat';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -314,6 +315,27 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async getRoomMessages(token: string, roomId: string): Promise<{ messages: RoomChatMessage[] }> {
+    return this.fetch<{ messages: RoomChatMessage[] }>(
+      `/api/rooms/messages?roomId=${encodeURIComponent(roomId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+  }
+
+  async sendRoomMessage(token: string, data: { roomId: string; body: string }): Promise<{ message: RoomChatMessage }> {
+    return this.fetch<{ message: RoomChatMessage }>('/api/rooms/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
   }
 

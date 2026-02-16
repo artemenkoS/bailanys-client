@@ -2,6 +2,7 @@ import { Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
@@ -17,6 +18,7 @@ import { RoomsListSection } from './RoomsListSection';
 
 export const MyRoomsSection = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: myRoomsData, isLoading, isError } = useMyRooms();
   const accessToken = useAuthStore((state) => state.session?.access_token || '');
   const callStatus = useCallStore((state) => state.status);
@@ -110,6 +112,7 @@ export const MyRoomsSection = () => {
         isMobile={isMobile}
         isActionDisabled={isActionDisabled}
         onJoin={onJoin}
+        onChat={(room) => navigate(`/rooms/${room.id}/chat`)}
         onDelete={handleDeleteRoom}
         deleteRoomId={deleteRoomId}
         onAvatarChange={handleUpdateRoomAvatar}
