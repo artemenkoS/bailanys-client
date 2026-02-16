@@ -12,8 +12,8 @@ import type {
 import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHistory';
 import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
 import type { ContactRequestsResponse, ContactSearchResult } from '../types/contacts';
-import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
 import type { RoomChatMessage } from '../types/roomChat';
+import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

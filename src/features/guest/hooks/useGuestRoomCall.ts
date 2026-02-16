@@ -49,7 +49,7 @@ export const useGuestRoomCall = (guestToken: string | null) => {
   const [members, setMembers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
-  const [selfId, setSelfId] = useState<string | null>(decodedGuestId);
+  const [selfId, setSelfId] = useState<string | null>(null);
 
   const statusRef = useRef<GuestRoomStatus>('connecting');
   const socketRef = useRef<WebSocket | null>(null);
@@ -93,9 +93,14 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     }
     if (decodedGuestId && selfIdRef.current !== decodedGuestId) {
       selfIdRef.current = decodedGuestId;
-      setSelfId(decodedGuestId);
     }
   }, [decodedGuestId, decodedRoomId]);
+
+  const effectiveSelfId = selfId ?? decodedGuestId;
+
+  useEffect(() => {
+    selfIdRef.current = effectiveSelfId;
+  }, [effectiveSelfId]);
 
   const toggleMicMute = useCallback(() => {
     const nextMuted = !isMicMutedRef.current;
@@ -374,6 +379,6 @@ export const useGuestRoomCall = (guestToken: string | null) => {
     isMicMuted,
     toggleMicMute,
     leaveRoom,
-    selfId,
+    selfId: effectiveSelfId,
   };
 };

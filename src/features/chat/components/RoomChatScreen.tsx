@@ -1,13 +1,21 @@
-import { ActionIcon, Avatar, Center, Group, Loader, ScrollArea, Stack, Text, Textarea } from '@mantine/core';
-import { IconArrowLeft, IconSend } from '@tabler/icons-react';
+import { ActionIcon, Avatar, Button, Center, Group, Loader, ScrollArea, Stack, Text, Textarea } from '@mantine/core';
+import { IconArrowLeft, IconDoorEnter, IconSend } from '@tabler/icons-react';
+import { useQueries } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { apiService } from '../../../services/api.service';
 import { useAuthStore } from '../../../stores/authStore';
+import { useCallStore } from '../../../stores/callStore';
+import { useRoomCallStore } from '../../../stores/roomCallStore';
+import type { Profile } from '../../../types/auth';
 import type { RoomChatMessage } from '../../../types/roomChat';
+import { RoomPasswordModal } from '../../calls/components/modals/RoomPasswordModal';
 import { useMyRooms } from '../../calls/hooks/useMyRooms';
+import { useRoomJoinHandler } from '../../calls/hooks/useRoomJoinHandler';
 import { useRooms } from '../../calls/hooks/useRooms';
+import { useOnlineUsers } from '../../contacts/hooks/useOnlineUsers';
 import { useRoomChatMessages } from '../hooks/useRoomChatMessages';
 import { useSendRoomChatMessage } from '../hooks/useSendRoomChatMessage';
 import styles from './ChatScreen.module.css';
@@ -25,9 +33,15 @@ export const RoomChatScreen = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { roomId } = useParams();
+  const accessToken = useAuthStore((state) => state.session?.access_token);
   const currentUserId = useAuthStore((state) => state.user?.id ?? '');
+  const callStatus = useCallStore((state) => state.status);
+  const roomStatus = useRoomCallStore((state) => state.status);
+  const activeRoomId = useRoomCallStore((state) => state.roomId);
+  const joinRoom = useRoomJoinHandler();
   const { data: roomsData } = useRooms();
   const { data: myRoomsData } = useMyRooms();
+  const { data: onlineUsers } = useOnlineUsers();
   const [draft, setDraft] = useState('');
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +62,50 @@ export const RoomChatScreen = () => {
   }, [currentRoom, roomId]);
 
   const orderedMessages = useMemo(() => sortByCreatedAt(messages), [messages]);
+  const isInRoom = Boolean(activeRoomId);
+  const isActionDisabled = callStatus !== 'idle' || roomStatus === 'joining' || isInRoom;
+
+  const onlineProfilesById = useMemo(() => {
+    const map = new Map<string, Profile>();
+    for (const user of onlineUsers?.users ?? []) {
+      map.set(user.id, user);
+    }
+    return map;
+  }, [onlineUsers?.users]);
+
+  const senderIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const message of messages) {
+      if (!message.sender_id || message.sender_id === currentUserId) continue;
+      if (onlineProfilesById.has(message.sender_id)) continue;
+      ids.add(message.sender_id);
+    }
+    return Array.from(ids);
+  }, [currentUserId, messages, onlineProfilesById]);
+
+  const senderQueries = useQueries({
+    queries: senderIds.map((senderId) => ({
+      queryKey: ['room-chat-user', senderId],
+      enabled: Boolean(accessToken && senderId),
+      queryFn: async () => apiService.getUserById(accessToken!, senderId),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const senderProfiles = useMemo(() => {
+    const map = new Map(onlineProfilesById);
+    for (const query of senderQueries) {
+      if (query.data?.user) {
+        map.set(query.data.user.id, query.data.user);
+      }
+    }
+    return map;
+  }, [onlineProfilesById, senderQueries]);
+
+  const resolveSenderLabel = (senderId: string) => {
+    const profile = senderProfiles.get(senderId);
+    return profile?.display_name || profile?.username || senderId.slice(0, 8);
+  };
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -72,6 +130,7 @@ export const RoomChatScreen = () => {
 
   return (
     <div className={styles.chatScreen}>
+      <RoomPasswordModal />
       <div className={styles.topBar}>
         <ActionIcon variant="subtle" color="indigo" size="lg" onClick={() => navigate('/')}
         >
@@ -90,6 +149,21 @@ export const RoomChatScreen = () => {
             ) : null}
           </div>
         </Group>
+        <div className={styles.topActions}>
+          <Button
+            size="sm"
+            variant="light"
+            leftSection={<IconDoorEnter size={16} />}
+            onClick={() => {
+              if (!currentRoom) return;
+              navigate('/');
+              joinRoom(currentRoom);
+            }}
+            disabled={!currentRoom || isActionDisabled}
+          >
+            {t('rooms.enterCall')}
+          </Button>
+        </div>
       </div>
 
       <ScrollArea
@@ -116,9 +190,15 @@ export const RoomChatScreen = () => {
           <Stack gap="xs">
             {orderedMessages.map((message) => {
               const isOwn = message.sender_id === currentUserId;
+              const authorLabel = isOwn ? '' : resolveSenderLabel(message.sender_id);
               return (
                 <div key={message.id} className={styles.messageRow}>
                   <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`}>
+                    {!isOwn ? (
+                      <Text size="xs" c="dimmed" className={styles.author}>
+                        {authorLabel}
+                      </Text>
+                    ) : null}
                     <Text size="sm">{message.body}</Text>
                     <div className={styles.metaRow}>
                       <div className={styles.metaLeft}>

@@ -1,5 +1,5 @@
 import { ActionIcon, Avatar, Badge, Box, Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
-import { IconCheck, IconPhone, IconPhoneOff, IconX } from '@tabler/icons-react';
+import { IconCheck, IconPhone, IconPhoneOff, IconUsersGroup, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
+import { useRoomCallStore } from '../../../../stores/roomCallStore';
+import { useMyRooms } from '../../hooks/useMyRooms';
 import { useResizablePreview } from '../../hooks/useResizablePreview';
+import { useRooms } from '../../hooks/useRooms';
 import { MuteMicButton } from '../shared/MuteMicButton';
 import { ScreenShareButton } from '../shared/ScreenShareButton';
 import styles from './CallOverlay.module.css';
@@ -26,6 +29,14 @@ export const CallOverlay = () => {
   const stopCall = useCallStore((state) => state.stopCall);
   const toggleMicMute = useCallStore((state) => state.toggleMicMute);
   const toggleScreenShare = useCallStore((state) => state.toggleScreenShare);
+  const roomStatus = useRoomCallStore((state) => state.status);
+  const roomId = useRoomCallStore((state) => state.roomId);
+  const roomMembers = useRoomCallStore((state) => state.members);
+  const isRoomMicMuted = useRoomCallStore((state) => state.isMicMuted);
+  const toggleRoomMicMute = useRoomCallStore((state) => state.toggleMicMute);
+  const leaveRoom = useRoomCallStore((state) => state.leaveRoom);
+  const { data: roomsData } = useRooms();
+  const { data: myRoomsData } = useMyRooms();
   const accessToken = useAuthStore((state) => state.session?.access_token);
   const isEnded = status === 'ended';
   const isRejected = status === 'rejected';
@@ -38,6 +49,8 @@ export const CallOverlay = () => {
   const isRemoteSharing = Boolean(remoteScreenStream) && isRemoteScreenSharing;
   const hasScreenPreview = isRemoteSharing;
   const previewLabel = useMemo(() => t('calls.screenShareRemote'), [t]);
+  const showDirectCallCard = Boolean(activeCallTarget);
+  const showRoomCallCard = !showDirectCallCard && Boolean(roomId);
 
   const { previewRef: screenPreviewRef, cardRef, handleResizeStart } = useResizablePreview({
     enabled: hasScreenPreview,
@@ -63,6 +76,17 @@ export const CallOverlay = () => {
     callUser?.display_name ||
     callUser?.username ||
     (lookupId ? lookupId.slice(0, 12) : t('chat.unknownUser'));
+  const rooms = useMemo(() => {
+    const list = roomsData?.rooms ?? [];
+    const mine = myRoomsData?.rooms ?? [];
+    return [...list, ...mine];
+  }, [roomsData?.rooms, myRoomsData?.rooms]);
+  const currentRoom = useMemo(() => {
+    if (!roomId) return null;
+    return rooms.find((room) => room.id === roomId) ?? null;
+  }, [rooms, roomId]);
+  const roomLabel = currentRoom?.name || roomId || t('rooms.chatTitle');
+  const roomAvatarUrl = currentRoom?.avatarUrl ?? undefined;
 
   const formatDuration = (seconds: number) => {
     const safe = Math.max(0, Math.floor(seconds));
@@ -84,6 +108,16 @@ export const CallOverlay = () => {
     if (isRejected) return t('calls.callRejected');
     if (isCalling) return t('calls.calling');
     return t('calls.inCall');
+  };
+
+  const getRoomThemeColor = () => {
+    if (roomStatus === 'joining') return 'indigo';
+    return 'green';
+  };
+
+  const getRoomStatusLabel = () => {
+    if (roomStatus === 'joining') return t('rooms.callJoining');
+    return t('rooms.callInProgress');
   };
 
   useEffect(() => {
@@ -132,7 +166,7 @@ export const CallOverlay = () => {
         </Stack>
       </Modal>
 
-      {activeCallTarget && (
+      {showDirectCallCard && (
         <Card
           withBorder
           shadow="xl"
@@ -204,6 +238,51 @@ export const CallOverlay = () => {
               )}
 
               {isFinished && <IconCheck size={24} className={styles.finishedIcon} />}
+            </Group>
+          </Stack>
+        </Card>
+      )}
+
+      {showRoomCallCard && (
+        <Card
+          withBorder
+          shadow="xl"
+          p="sm"
+          className={styles.callCard}
+          data-theme={getRoomThemeColor()}
+        >
+          <Stack gap="sm">
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap="sm" wrap="nowrap" className={styles.callMeta}>
+                <Avatar color={getRoomThemeColor()} radius="xl" variant="light" src={roomAvatarUrl}>
+                  <IconUsersGroup size={20} />
+                </Avatar>
+                <div className={styles.overflowHidden}>
+                  <Text size="xs" fw={700} c={getRoomThemeColor()} tt="uppercase" className={styles.statusText}>
+                    {getRoomStatusLabel()}
+                  </Text>
+                  <Text size="sm" fw={600} truncate>
+                    {roomLabel}
+                  </Text>
+                  <Text size="xs" c="dimmed" mt={2}>
+                    {t('rooms.participants', { count: roomMembers.length })}
+                  </Text>
+                </div>
+              </Group>
+
+              <Group gap="xs" wrap="nowrap" className={styles.callActions}>
+                <MuteMicButton isMuted={isRoomMicMuted} onToggle={toggleRoomMicMute} />
+                <ActionIcon
+                  color="red"
+                  size="xl"
+                  radius="md"
+                  variant="filled"
+                  onClick={() => leaveRoom()}
+                  className={styles.hangupButton}
+                >
+                  <IconPhoneOff size={22} />
+                </ActionIcon>
+              </Group>
             </Group>
           </Stack>
         </Card>
