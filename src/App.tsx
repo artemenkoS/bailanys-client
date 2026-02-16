@@ -17,6 +17,7 @@ import {
 } from './features/auth/utils/supabaseRedirect';
 import { Dashboard } from './features/dashboard/components/Dashboard';
 import { GuestRoomPage } from './features/guest/components/GuestRoomPage';
+import { RoomInvitePage } from './features/rooms/components/RoomInvitePage';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
 
@@ -113,6 +114,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordForm />} />
       <Route path="/reset-password" element={<ResetPasswordForm />} />
       <Route path="/guest/:token" element={<GuestRoomPage />} />
+      <Route path="/invite/:token" element={<RoomInvitePage />} />
       <Route
         path="/"
         element={

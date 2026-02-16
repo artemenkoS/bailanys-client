@@ -1,13 +1,20 @@
 import { Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { useCallback, useState } from 'react';
+import { notifications } from '@mantine/notifications';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useCallStore } from '../../../../stores/callStore';
 import { useRoomCallStore } from '../../../../stores/roomCallStore';
-import type { RoomOwnerSummary } from '../../../../types/rooms';
+import type { RoomsListActions } from '../../../../stores/roomsListStore';
+import { useRoomsListStore } from '../../../../stores/roomsListStore';
+import type { RoomMemberSummary, RoomSummary } from '../../../../types/rooms';
+import { RoomInviteUsersModal } from '../../../rooms/components/RoomInviteUsersModal';
+import { RoomMembersModal } from '../../../rooms/components/RoomMembersModal';
+import { useUpdateRoomMemberRole } from '../../../rooms/hooks/useUpdateRoomMemberRole';
 import { useDeleteRoom } from '../../hooks/useDeleteRoom';
 import { useMyRooms } from '../../hooks/useMyRooms';
 import { useRemoveRoomAvatar } from '../../hooks/useRemoveRoomAvatar';
@@ -26,6 +33,7 @@ export const MyRoomsSection = () => {
   const roomId = useRoomCallStore((state) => state.roomId);
   const onJoin = useRoomJoinHandler();
   const { deleteRoomAsync } = useDeleteRoom();
+  const updateRoleMutation = useUpdateRoomMemberRole();
   const updateRoomAvatarMutation = useUpdateRoomAvatar();
   const removeRoomAvatarMutation = useRemoveRoomAvatar();
   const updateRoomAvatarAsync = updateRoomAvatarMutation.mutateAsync;
@@ -34,14 +42,20 @@ export const MyRoomsSection = () => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
   const [avatarRoomId, setAvatarRoomId] = useState<string | null>(null);
-  const [deleteCandidate, setDeleteCandidate] = useState<RoomOwnerSummary | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<RoomMemberSummary | null>(null);
+  const [manageRoom, setManageRoom] = useState<RoomMemberSummary | null>(null);
+  const [inviteLinkRoomId, setInviteLinkRoomId] = useState<string | null>(null);
+  const [inviteUsersRoom, setInviteUsersRoom] = useState<RoomMemberSummary | null>(null);
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const setUi = useRoomsListStore((state) => state.setUi);
+  const setActions = useRoomsListStore((state) => state.setActions);
 
   const isInRoom = Boolean(roomId);
   const isActionDisabled = callStatus !== 'idle' || roomStatus === 'joining' || isInRoom;
 
-  const handleDeleteRoom = (room: RoomOwnerSummary) => {
+  const handleDeleteRoom = useCallback((room: RoomMemberSummary) => {
     setDeleteCandidate(room);
-  };
+  }, []);
 
   const closeDeleteModal = () => {
     setDeleteCandidate(null);
@@ -61,7 +75,7 @@ export const MyRoomsSection = () => {
   };
 
   const handleUpdateRoomAvatar = useCallback(
-    async (room: RoomOwnerSummary, file: File) => {
+    async (room: RoomMemberSummary, file: File) => {
       if (!accessToken) return;
       setActionError(null);
       setAvatarRoomId(room.id);
@@ -78,7 +92,7 @@ export const MyRoomsSection = () => {
   );
 
   const handleRemoveRoomAvatar = useCallback(
-    async (room: RoomOwnerSummary) => {
+    async (room: RoomMemberSummary) => {
       if (!accessToken) return;
       setActionError(null);
       setAvatarRoomId(room.id);
@@ -94,6 +108,120 @@ export const MyRoomsSection = () => {
     [accessToken, removeRoomAvatarAsync]
   );
 
+  const handleInviteLink = useCallback(
+    async (room: RoomMemberSummary) => {
+      const freshToken = useAuthStore.getState().session?.access_token ?? '';
+      if (!freshToken || inviteLinkRoomId) {
+        if (!freshToken) {
+          notifications.show({
+            title: t('notifications.error'),
+            message: t('notifications.loginFailed'),
+            color: 'red',
+          });
+        }
+        return;
+      }
+      setInviteLinkRoomId(room.id);
+      try {
+        const response = await apiService.createRoomInviteLink(freshToken, { roomId: room.id });
+        const inviteToken = response.token;
+        if (!inviteToken) throw new Error('Invite token missing');
+        const url = `${window.location.origin}/invite/${inviteToken}`;
+
+        let copied = false;
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(url);
+            copied = true;
+          } catch {
+            copied = false;
+          }
+        }
+
+        notifications.show({
+          title: t('notifications.success'),
+          message: copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url }),
+          color: copied ? 'green' : 'blue',
+        });
+      } catch (err) {
+        console.error('Create invite link failed:', err);
+        notifications.show({
+          title: t('notifications.error'),
+          message: t('rooms.inviteLinkFailed'),
+          color: 'red',
+        });
+      } finally {
+        setInviteLinkRoomId(null);
+      }
+    },
+    [inviteLinkRoomId, t]
+  );
+
+  const handleLeaveRoom = useCallback(
+    async (room: RoomMemberSummary) => {
+      if (!currentUserId) {
+        notifications.show({
+          title: t('notifications.error'),
+          message: t('notifications.loginFailed'),
+          color: 'red',
+        });
+        return;
+      }
+      try {
+        await updateRoleMutation.mutateAsync({
+          roomId: room.id,
+          userId: currentUserId,
+          action: 'leave',
+        });
+      } catch (err) {
+        console.error('Leave room failed:', err);
+        notifications.show({
+          title: t('notifications.error'),
+          message: t('rooms.leaveRoomFailed'),
+          color: 'red',
+        });
+      }
+    },
+    [currentUserId, t, updateRoleMutation]
+  );
+
+  const actions = useMemo<Partial<RoomsListActions>>(
+    () => ({
+      onJoin,
+      onChat: (room: RoomSummary) => navigate(`/rooms/${room.id}/chat`),
+      onDelete: handleDeleteRoom,
+      onInviteLink: handleInviteLink,
+      onInviteUsers: (room: RoomMemberSummary) => setInviteUsersRoom(room),
+      onManageUsers: (room: RoomMemberSummary) => setManageRoom(room),
+      onLeave: handleLeaveRoom,
+      onAvatarChange: handleUpdateRoomAvatar,
+      onAvatarRemove: handleRemoveRoomAvatar,
+    }),
+    [
+      handleDeleteRoom,
+      handleInviteLink,
+      handleLeaveRoom,
+      handleRemoveRoomAvatar,
+      handleUpdateRoomAvatar,
+      navigate,
+      onJoin,
+    ]
+  );
+
+  useEffect(() => {
+    setActions('mine', actions);
+  }, [actions, setActions]);
+
+  useEffect(() => {
+    setUi('mine', {
+      isMobile,
+      isActionDisabled,
+      deleteRoomId,
+      avatarUpdatingRoomId: avatarRoomId,
+      showInactiveBadge: true,
+    });
+  }, [avatarRoomId, deleteRoomId, isActionDisabled, isMobile, setUi]);
+
   return (
     <>
       <RoomDeleteConfirmModal
@@ -103,22 +231,19 @@ export const MyRoomsSection = () => {
         onConfirm={confirmDeleteRoom}
         loading={Boolean(deleteRoomId)}
       />
+      <RoomMembersModal opened={Boolean(manageRoom)} room={manageRoom} onClose={() => setManageRoom(null)} />
+      <RoomInviteUsersModal
+        opened={Boolean(inviteUsersRoom)}
+        room={inviteUsersRoom}
+        onClose={() => setInviteUsersRoom(null)}
+      />
       <RoomsListSection
+        listKey="mine"
         title={t('rooms.myRoomsTitle')}
         rooms={myRoomsData?.rooms ?? []}
         isLoading={isLoading}
         isError={isError}
         emptyText={t('rooms.emptyMine')}
-        isMobile={isMobile}
-        isActionDisabled={isActionDisabled}
-        onJoin={onJoin}
-        onChat={(room) => navigate(`/rooms/${room.id}/chat`)}
-        onDelete={handleDeleteRoom}
-        deleteRoomId={deleteRoomId}
-        onAvatarChange={handleUpdateRoomAvatar}
-        onAvatarRemove={handleRemoveRoomAvatar}
-        avatarUpdatingRoomId={avatarRoomId}
-        showInactiveBadge
       />
       {actionError && (
         <Text size="sm" c="red" fw={500} mt="xs">

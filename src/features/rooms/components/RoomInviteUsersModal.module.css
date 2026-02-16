@@ -1,0 +1,35 @@
+.searchInput {
+  margin-bottom: 0.5rem;
+}
+
+.list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.userRow {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.userRow:hover {
+  background-color: var(--mantine-color-gray-0);
+}
+
+.userMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.userText {
+  flex: 1;
+  min-width: 0;
+}
+
+:global(html[data-mantine-color-scheme='dark']) .userRow:hover {
+  background-color: var(--mantine-color-dark-6);
+}

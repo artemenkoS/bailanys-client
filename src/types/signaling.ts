@@ -53,6 +53,11 @@ export interface RoomUserLeftMessage {
   userId: string;
 }
 
+export interface RoomKickedMessage {
+  type: 'room-kicked';
+  roomId: string;
+}
+
 export interface RoomOfferMessage {
   type: 'room-offer';
   roomId: string;
@@ -117,6 +122,7 @@ export type RoomSocketMessage =
   | RoomJoinedMessage
   | RoomUserJoinedMessage
   | RoomUserLeftMessage
+  | RoomKickedMessage
   | RoomOfferMessage
   | RoomAnswerMessage
   | RoomIceMessage

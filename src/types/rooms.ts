@@ -1,3 +1,5 @@
+import type { Profile } from './auth';
+
 export interface RoomSummary {
   id: string;
   name: string;
@@ -8,8 +10,19 @@ export interface RoomSummary {
   avatarUrl?: string | null;
 }
 
-export interface RoomOwnerSummary extends RoomSummary {
+export type RoomRole = 'admin' | 'member';
+
+export interface RoomMemberSummary extends RoomSummary {
   isActive: boolean;
+  role: RoomRole;
+  isCreator: boolean;
+}
+
+export interface RoomMemberEntry {
+  user: Profile;
+  role: RoomRole;
+  isCreator: boolean;
+  created_at?: string | null;
 }
 
 export interface CreateRoomPayload {

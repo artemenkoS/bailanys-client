@@ -36,6 +36,7 @@ export const useRoomCallManager = () => {
   const setRoomState = useRoomCallStore((state) => state.setState);
   const setRoomActions = useRoomCallStore((state) => state.setActions);
   const resetRoomStore = useRoomCallStore((state) => state.reset);
+  const pendingJoinRef = useRef<SocketMessage | null>(null);
 
   const setStatus = useCallback(
     (next: RoomCallStatus) => {
@@ -240,13 +241,18 @@ export const useRoomCallManager = () => {
       if (roomIdRef.current || status === 'joining') return;
       setError(null);
       setStatus('joining');
-      sendMessage({
+      const payload: SocketMessage = {
         type: 'join-room',
         roomId: trimmed,
         password: options?.password,
-      });
+      };
+      if (socket?.readyState === WebSocket.OPEN) {
+        sendMessage(payload);
+      } else {
+        pendingJoinRef.current = payload;
+      }
     },
-    [sendMessage, setError, setStatus, status]
+    [sendMessage, setError, setStatus, socket, status]
   );
 
   const createRoom = useCallback(
@@ -259,16 +265,21 @@ export const useRoomCallManager = () => {
       if (roomIdRef.current || status === 'joining') return;
       setError(null);
       setStatus('joining');
-      sendMessage({
+      const payload: SocketMessage = {
         type: 'join-room',
         roomId: trimmed,
         create: true,
         name: options.name,
         isPrivate: options.isPrivate,
         password: options.password,
-      });
+      };
+      if (socket?.readyState === WebSocket.OPEN) {
+        sendMessage(payload);
+      } else {
+        pendingJoinRef.current = payload;
+      }
     },
-    [sendMessage, setError, setStatus, status]
+    [sendMessage, setError, setStatus, socket, status]
   );
 
   const leaveRoom = useCallback(
@@ -283,6 +294,18 @@ export const useRoomCallManager = () => {
 
   useEffect(() => {
     if (!socket) return;
+
+    const handleOpen = () => {
+      if (pendingJoinRef.current) {
+        sendMessage(pendingJoinRef.current);
+        pendingJoinRef.current = null;
+      }
+    };
+
+    socket.addEventListener('open', handleOpen);
+    if (socket.readyState === WebSocket.OPEN) {
+      handleOpen();
+    }
 
     const handleMessage = async (event: MessageEvent) => {
       let msg: SocketMessage;
@@ -301,6 +324,7 @@ export const useRoomCallManager = () => {
           setRoomId(payload.roomId);
           setStatus('joined');
           setMembers(payload.users);
+          queryClient.invalidateQueries({ queryKey: ['my-rooms'] });
           roomStartedAtRef.current = Date.now();
           roomLoggedRef.current = false;
 
@@ -345,6 +369,15 @@ export const useRoomCallManager = () => {
           if (!payload.userId) return;
           setMembers((prev) => prev.filter((id) => id !== payload.userId));
           cleanupPeer(payload.userId);
+          break;
+        }
+        case 'room-kicked': {
+          const payload = msg as { roomId?: string };
+          if (!payload.roomId || payload.roomId !== roomIdRef.current) return;
+          persistRoomHistory('failed');
+          sendMessage({ type: 'leave-room' });
+          cleanupRoom();
+          setError('rooms.errors.removed');
           break;
         }
         case 'room-offer': {
@@ -422,6 +455,7 @@ export const useRoomCallManager = () => {
     socket.addEventListener('close', handleClose);
     socket.addEventListener('error', handleClose);
     return () => {
+      socket.removeEventListener('open', handleOpen);
       socket.removeEventListener('message', handleMessage);
       socket.removeEventListener('close', handleClose);
       socket.removeEventListener('error', handleClose);
@@ -429,16 +463,17 @@ export const useRoomCallManager = () => {
   }, [
     socket,
     userId,
+    sendMessage,
     ensureMeshLocalStream,
     sendOfferToPeer,
     handleRoomOffer,
     handleRoomAnswer,
     handleRoomIceCandidate,
-    sendMessage,
     cleanupPeer,
     cleanupRoom,
     leaveRoom,
     persistRoomHistory,
+    queryClient,
     setError,
     setMembers,
     setRoomId,

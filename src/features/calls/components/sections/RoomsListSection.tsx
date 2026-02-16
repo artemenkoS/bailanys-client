@@ -1,88 +1,53 @@
-import {
-  Avatar,
-  Badge,
-  Box,
-  Button,
-  Card,
-  FileButton,
-  Group,
-  Loader,
-  Menu,
-  Stack,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Avatar, Badge, Box, Button, Card, FileButton, Group, Loader, Menu, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconDoorEnter, IconMessage2, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { RoomOwnerSummary, RoomSummary } from '../../../../types/rooms';
+import type { RoomsListActions, RoomsListKey, RoomsListUi } from '../../../../stores/roomsListStore';
+import { useRoomsListStore } from '../../../../stores/roomsListStore';
+import type { RoomMemberSummary, RoomSummary } from '../../../../types/rooms';
+import { RoomActionsMenu } from './RoomActionsMenu';
 import styles from './RoomsListSection.module.css';
 
 interface RoomsListSectionProps<T extends RoomSummary> {
+  listKey: RoomsListKey;
   title: string;
   rooms: T[];
   isLoading?: boolean;
   isError?: boolean;
   emptyText: string;
-  isMobile: boolean;
-  isActionDisabled: boolean;
-  onJoin: (room: RoomSummary) => void;
-  onChat?: (room: RoomSummary) => void;
-  onDelete?: (room: RoomOwnerSummary) => void;
-  deleteRoomId?: string | null;
-  onAvatarChange?: (room: RoomOwnerSummary, file: File) => void;
-  onAvatarRemove?: (room: RoomOwnerSummary) => void;
-  avatarUpdatingRoomId?: string | null;
-  showInactiveBadge?: boolean;
 }
 
 const RoomCard = ({
   room,
-  isMobile,
-  isActionDisabled,
-  onJoin,
-  onChat,
-  onDelete,
-  deleteRoomId,
-  onAvatarChange,
-  onAvatarRemove,
-  avatarUpdatingRoomId,
-  showInactiveBadge,
+  actions,
+  ui,
 }: {
-  room: RoomSummary | RoomOwnerSummary;
-  isMobile: boolean;
-  isActionDisabled: boolean;
-  onJoin: (room: RoomSummary) => void;
-  onChat?: (room: RoomSummary) => void;
-  onDelete?: (room: RoomOwnerSummary) => void;
-  deleteRoomId?: string | null;
-  onAvatarChange?: (room: RoomOwnerSummary, file: File) => void;
-  onAvatarRemove?: (room: RoomOwnerSummary) => void;
-  avatarUpdatingRoomId?: string | null;
-  showInactiveBadge?: boolean;
+  room: RoomSummary | RoomMemberSummary;
+  actions: RoomsListActions;
+  ui: RoomsListUi;
 }) => {
   const { t } = useTranslation();
-  const isOwnerRoom = 'isActive' in room;
-  const isInactive = showInactiveBadge && isOwnerRoom && !room.isActive;
-  const showDelete = Boolean(onDelete);
-  const showChat = Boolean(onChat);
-  const showAvatarActions = Boolean(onAvatarChange) && isOwnerRoom;
-  const isAvatarUpdating = avatarUpdatingRoomId === room.id;
+  const isMemberRoom = 'isActive' in room;
+  const isCreator = isMemberRoom && Boolean((room as RoomMemberSummary).isCreator);
+  const isInactive = ui.showInactiveBadge && isMemberRoom && !room.isActive;
+  const showChat = Boolean(actions.onChat);
+  const showAvatarActions = Boolean(actions.onAvatarChange) && isCreator;
+  const isAvatarUpdating = ui.avatarUpdatingRoomId === room.id;
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
 
   const avatarMenu = showAvatarActions ? (
     <Menu
       withinPortal
       position="bottom-start"
-      disabled={isActionDisabled || isAvatarUpdating}
+      disabled={ui.isActionDisabled || isAvatarUpdating}
       opened={isAvatarMenuOpen}
       onChange={setIsAvatarMenuOpen}
     >
       <Menu.Target>
         <UnstyledButton
           aria-label={t('rooms.avatarChange')}
-          disabled={isActionDisabled || isAvatarUpdating}
+          disabled={ui.isActionDisabled || isAvatarUpdating}
           className={styles.avatarButton}
         >
           <Box className={styles.avatarBox}>
@@ -100,7 +65,7 @@ const RoomCard = ({
           accept="image/*"
           onChange={(file) => {
             if (file) {
-              onAvatarChange?.(room as RoomOwnerSummary, file);
+              actions.onAvatarChange?.(room as RoomMemberSummary, file);
               setIsAvatarMenuOpen(false);
             }
           }}
@@ -113,9 +78,9 @@ const RoomCard = ({
         </FileButton>
         <Menu.Item
           color="red"
-          disabled={!room.avatarUrl || isActionDisabled || isAvatarUpdating}
+          disabled={!room.avatarUrl || ui.isActionDisabled || isAvatarUpdating}
           onClick={() => {
-            onAvatarRemove?.(room as RoomOwnerSummary);
+            actions.onAvatarRemove?.(room as RoomMemberSummary);
             setIsAvatarMenuOpen(false);
           }}
         >
@@ -129,14 +94,24 @@ const RoomCard = ({
     </Avatar>
   );
 
-  const actionButtons = isMobile ? (
+  const roomMenu = isMemberRoom ? (
+    <RoomActionsMenu
+      room={room as RoomMemberSummary}
+      isMobile={ui.isMobile}
+      isActionDisabled={ui.isActionDisabled}
+      deleteRoomId={ui.deleteRoomId}
+      actions={actions}
+    />
+  ) : null;
+
+  const actionButtons = ui.isMobile ? (
     <Stack gap="xs" w="100%">
       {showChat && (
         <Button
           size="xs"
           variant="light"
           leftSection={<IconMessage2 size={14} />}
-          onClick={() => onChat?.(room)}
+          onClick={() => actions.onChat?.(room)}
           fullWidth
         >
           {t('rooms.chat')}
@@ -145,53 +120,35 @@ const RoomCard = ({
       <Button
         size="xs"
         leftSection={<IconDoorEnter size={14} />}
-        onClick={() => onJoin(room)}
-        disabled={isActionDisabled}
+        onClick={() => actions.onJoin(room)}
+        disabled={ui.isActionDisabled}
         fullWidth
       >
         {t('rooms.join')}
       </Button>
-      {showDelete && (
-        <Button
-          size="xs"
-          color="red"
-          variant="light"
-          onClick={() => onDelete?.(room as RoomOwnerSummary)}
-          loading={deleteRoomId === room.id}
-          disabled={isActionDisabled}
-          fullWidth
-        >
-          {t('rooms.delete')}
-        </Button>
-      )}
+      {roomMenu}
     </Stack>
   ) : (
     <Group gap="xs" wrap="nowrap">
       {showChat && (
-        <Button size="xs" variant="light" leftSection={<IconMessage2 size={14} />} onClick={() => onChat?.(room)}>
+        <Button
+          size="xs"
+          variant="light"
+          leftSection={<IconMessage2 size={14} />}
+          onClick={() => actions.onChat?.(room)}
+        >
           {t('rooms.chat')}
         </Button>
       )}
       <Button
         size="xs"
         leftSection={<IconDoorEnter size={14} />}
-        onClick={() => onJoin(room)}
-        disabled={isActionDisabled}
+        onClick={() => actions.onJoin(room)}
+        disabled={ui.isActionDisabled}
       >
         {t('rooms.join')}
       </Button>
-      {showDelete && (
-        <Button
-          size="xs"
-          color="red"
-          variant="light"
-          onClick={() => onDelete?.(room as RoomOwnerSummary)}
-          loading={deleteRoomId === room.id}
-          disabled={isActionDisabled}
-        >
-          {t('rooms.delete')}
-        </Button>
-      )}
+      {roomMenu}
     </Group>
   );
 
@@ -214,6 +171,16 @@ const RoomCard = ({
                   {t('rooms.publicBadge')}
                 </Badge>
               )}
+              {'isCreator' in room && room.isCreator && (
+                <Badge color="blue" variant="light">
+                  {t('rooms.creatorBadge')}
+                </Badge>
+              )}
+              {'role' in room && room.role === 'admin' && !('isCreator' in room && room.isCreator) && (
+                <Badge color="indigo" variant="light">
+                  {t('rooms.adminBadge')}
+                </Badge>
+              )}
               {isInactive && (
                 <Badge color="gray" variant="light">
                   {t('rooms.inactiveBadge')}
@@ -232,23 +199,16 @@ const RoomCard = ({
 };
 
 export const RoomsListSection = <T extends RoomSummary>({
+  listKey,
   title,
   rooms,
   isLoading,
   isError,
   emptyText,
-  isMobile,
-  isActionDisabled,
-  onJoin,
-  onChat,
-  onDelete,
-  deleteRoomId,
-  onAvatarChange,
-  onAvatarRemove,
-  avatarUpdatingRoomId,
-  showInactiveBadge,
 }: RoomsListSectionProps<T>) => {
   const { t } = useTranslation();
+  const actions = useRoomsListStore((state) => state.actionsByKey[listKey]);
+  const ui = useRoomsListStore((state) => state.uiByKey[listKey]);
 
   return (
     <Stack gap="sm">
@@ -272,16 +232,8 @@ export const RoomsListSection = <T extends RoomSummary>({
             <RoomCard
               key={room.id}
               room={room}
-              isMobile={isMobile}
-              isActionDisabled={isActionDisabled}
-              onJoin={onJoin}
-              onChat={onChat}
-              onDelete={onDelete}
-              deleteRoomId={deleteRoomId}
-              onAvatarChange={onAvatarChange}
-              onAvatarRemove={onAvatarRemove}
-              avatarUpdatingRoomId={avatarUpdatingRoomId}
-              showInactiveBadge={showInactiveBadge}
+              actions={actions}
+              ui={ui}
             />
           ))}
         </Stack>

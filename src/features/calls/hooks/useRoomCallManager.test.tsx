@@ -47,6 +47,7 @@ vi.mock('../../../services/api.service', () => ({
 
 class FakeSocket {
   private listeners = new Map<string, Set<(event: MessageEvent | CloseEvent | Event) => void>>();
+  readyState = WebSocket.OPEN;
 
   addEventListener(type: string, handler: (event: MessageEvent | CloseEvent | Event) => void) {
     const set = this.listeners.get(type) ?? new Set();
@@ -60,7 +61,7 @@ class FakeSocket {
     set.delete(handler);
   }
 
-  emit(type: 'message' | 'close' | 'error', event: MessageEvent | CloseEvent | Event) {
+  emit(type: 'message' | 'close' | 'error' | 'open', event: MessageEvent | CloseEvent | Event) {
     const set = this.listeners.get(type);
     if (!set) return;
     for (const handler of set) {

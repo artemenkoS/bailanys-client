@@ -3,13 +3,13 @@
 }
 
 .memberRow {
-  width: 5%;
+  width: 100%;
 }
 
 .memberBadge {
-  flex: 1 1 auto;
-  min-width: 80px;
-  max-width: 160px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: none;
 }
 
 .volumeSlider {

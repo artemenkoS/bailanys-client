@@ -16,7 +16,7 @@ export const useRoomJoinHandler = () => {
 
   return useCallback(
     (room: RoomSummary) => {
-      if (room.isPrivate) {
+      if (room.isPrivate && !('role' in room)) {
         openPasswordModal(room);
         return;
       }

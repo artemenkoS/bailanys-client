@@ -13,7 +13,8 @@ import type { CallHistoryItem, CreateCallHistoryRequest } from '../types/callHis
 import type { ChatMessage, ChatMessagesResponse, SendChatMessageRequest } from '../types/chat';
 import type { ContactRequestsResponse, ContactSearchResult } from '../types/contacts';
 import type { RoomChatMessage } from '../types/roomChat';
-import type { RoomOwnerSummary, RoomSummary } from '../types/rooms';
+import type { RoomInviteRequestsResponse } from '../types/roomInvites';
+import type { RoomMemberEntry, RoomMemberSummary, RoomSummary } from '../types/rooms';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -310,12 +311,99 @@ class ApiService {
     });
   }
 
-  async getMyRooms(token: string): Promise<{ rooms: RoomOwnerSummary[] }> {
-    return this.fetch<{ rooms: RoomOwnerSummary[] }>('/api/rooms/mine', {
+  async getMyRooms(token: string): Promise<{ rooms: RoomMemberSummary[] }> {
+    return this.fetch<{ rooms: RoomMemberSummary[] }>('/api/rooms/mine', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+  }
+
+  async getRoomInviteRequests(token: string): Promise<RoomInviteRequestsResponse> {
+    return this.fetch<RoomInviteRequestsResponse>('/api/rooms/requests', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async createRoomInvite(
+    token: string,
+    data: { roomId: string; targetId: string }
+  ): Promise<{ request: unknown }> {
+    return this.fetch<{ request: unknown }>('/api/rooms/requests', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateRoomInvite(
+    token: string,
+    data: { requestId: string; action: 'accept' | 'decline' | 'cancel' }
+  ): Promise<{ request: unknown }> {
+    return this.fetch<{ request: unknown }>('/api/rooms/requests', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createRoomInviteLink(
+    token: string,
+    data: { roomId: string; ttlSeconds?: number }
+  ): Promise<{ token: string; expiresAt?: string }> {
+    return this.fetch<{ token: string; expiresAt?: string }>('/api/rooms/invite-link', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async acceptRoomInviteLink(
+    token: string,
+    data: { token: string }
+  ): Promise<{ room: { id: string; name: string; isPrivate: boolean; avatarUrl?: string | null } }> {
+    return this.fetch<{ room: { id: string; name: string; isPrivate: boolean; avatarUrl?: string | null } }>(
+      '/api/rooms/invite-link/accept',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async getRoomMembers(token: string, roomId: string): Promise<{ members: RoomMemberEntry[] }> {
+    return this.fetch<{ members: RoomMemberEntry[] }>(`/api/rooms/members?roomId=${encodeURIComponent(roomId)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async updateRoomMemberRole(
+    token: string,
+    data: { roomId: string; userId: string; action: 'promote' | 'demote' | 'remove' | 'leave' }
+  ): Promise<{ member?: { room_id: string; user_id: string; role: string }; ok?: boolean }> {
+    return this.fetch<{ member?: { room_id: string; user_id: string; role: string }; ok?: boolean }>(
+      '/api/rooms/members',
+      {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+      }
+    );
   }
 
   async getRoomMessages(token: string, roomId: string): Promise<{ messages: RoomChatMessage[] }> {

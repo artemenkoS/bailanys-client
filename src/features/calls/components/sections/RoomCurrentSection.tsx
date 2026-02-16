@@ -1,6 +1,6 @@
-import { Avatar, Badge, Button, Group, Slider, Stack, Text } from '@mantine/core';
+import { ActionIcon, Avatar, Badge, Button, Group, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconDoorExit, IconLink, IconVolume2 } from '@tabler/icons-react';
+import { IconCrown, IconCrownOff, IconDoorExit, IconLink, IconLinkPlus, IconVolume2 } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,8 @@ import { apiService } from '../../../../services/api.service';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useRoomCallStore } from '../../../../stores/roomCallStore';
 import { useOnlineUsers } from '../../../contacts/hooks/useOnlineUsers';
+import { useRoomMembers } from '../../../rooms/hooks/useRoomMembers';
+import { useUpdateRoomMemberRole } from '../../../rooms/hooks/useUpdateRoomMemberRole';
 import { useMyRooms } from '../../hooks/useMyRooms';
 import { useRooms } from '../../hooks/useRooms';
 import { MuteMicButton } from '../shared/MuteMicButton';
@@ -28,6 +30,9 @@ export const RoomCurrentSection = () => {
   const leaveRoom = useRoomCallStore((state) => state.leaveRoom);
   const setMemberVolume = useRoomCallStore((state) => state.setPeerVolume);
   const [isLinkLoading, setIsLinkLoading] = useState(false);
+  const [isInviteLinkLoading, setIsInviteLinkLoading] = useState(false);
+  const { data: roomMembersData } = useRoomMembers(roomId);
+  const updateMemberRole = useUpdateRoomMemberRole();
 
   const handleLeaveRoom = useCallback(() => {
     leaveRoom();
@@ -69,8 +74,51 @@ export const RoomCurrentSection = () => {
     }
   }, [roomId, accessToken, isLinkLoading, t]);
 
+  const handleCreateInviteLink = useCallback(async () => {
+    if (!roomId || !accessToken || isInviteLinkLoading) return;
+    setIsInviteLinkLoading(true);
+    try {
+      const response = await apiService.createRoomInviteLink(accessToken, { roomId });
+      const inviteToken = response.token;
+      if (!inviteToken) throw new Error('Invite token missing');
+      const url = `${window.location.origin}/invite/${inviteToken}`;
+
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      notifications.show({
+        title: t('notifications.success'),
+        message: copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url }),
+        color: copied ? 'green' : 'blue',
+      });
+    } catch (error) {
+      console.error('Failed to create invite link:', error);
+      notifications.show({
+        title: t('notifications.error'),
+        message: t('rooms.inviteLinkFailed'),
+        color: 'red',
+      });
+    } finally {
+      setIsInviteLinkLoading(false);
+    }
+  }, [roomId, accessToken, isInviteLinkLoading, t]);
+
   const rooms = useMemo(() => roomsData?.rooms ?? [], [roomsData?.rooms]);
   const myRooms = useMemo(() => myRoomsData?.rooms ?? [], [myRoomsData?.rooms]);
+
+  const currentMembership = useMemo(() => {
+    if (!roomId) return null;
+    return myRooms.find((room) => room.id === roomId) ?? null;
+  }, [myRooms, roomId]);
+
+  const isAdmin = currentMembership?.role === 'admin';
 
   const currentRoom = useMemo(() => {
     if (!roomId) return null;
@@ -98,6 +146,24 @@ export const RoomCurrentSection = () => {
     return profileById.get(id)?.displayName ?? id.slice(0, 8);
   };
 
+  const roleById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const entry of roomMembersData?.members ?? []) {
+      map.set(entry.user.id, entry.role);
+    }
+    return map;
+  }, [roomMembersData?.members]);
+
+  const creatorIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const entry of roomMembersData?.members ?? []) {
+      if (entry.isCreator) {
+        set.add(entry.user.id);
+      }
+    }
+    return set;
+  }, [roomMembersData?.members]);
+
   if (!roomId) return null;
 
   return (
@@ -113,6 +179,20 @@ export const RoomCurrentSection = () => {
         </Group>
         <Group gap="xs" wrap="nowrap">
           <MuteMicButton isMuted={isMicMuted} onToggle={toggleMicMute} />
+          {isAdmin && (
+            <Button
+              color="indigo"
+              variant="light"
+              size="md"
+              leftSection={<IconLinkPlus size={18} />}
+              onClick={handleCreateInviteLink}
+              loading={isInviteLinkLoading}
+              disabled={!accessToken}
+              radius="md"
+            >
+              {t('rooms.inviteLink')}
+            </Button>
+          )}
           <Button
             color="indigo"
             variant="light"
@@ -146,15 +226,30 @@ export const RoomCurrentSection = () => {
           const isSelf = id === currentUserId;
           const volume = memberVolumes[id] ?? 1;
           const volumePercent = Math.round(volume * 100);
+          const memberRole = roleById.get(id);
+          const isAdminMember = memberRole === 'admin';
+          const isCreator = creatorIds.has(id);
+          const isGuest = id.startsWith('guest:');
+          const canToggleRole = Boolean(isAdmin && !isGuest && !isSelf && !isCreator);
+          const isUpdatingRole =
+            updateMemberRole.isPending && updateMemberRole.variables?.userId === id;
           return (
             <Group key={id} gap="sm" wrap="nowrap" className={styles.memberRow}>
-              <Badge
-                color={isSelf ? 'indigo' : 'gray'}
-                variant={isSelf ? 'filled' : 'light'}
-                className={styles.memberBadge}
-              >
-                {resolveMemberLabel(id)}
-              </Badge>
+              <Group gap={6} wrap="wrap" className={styles.memberBadge}>
+                <Badge color={isSelf ? 'indigo' : 'gray'} variant={isSelf ? 'filled' : 'light'}>
+                  {resolveMemberLabel(id)}
+                </Badge>
+                {isCreator && (
+                  <Badge size="xs" variant="light" color="blue">
+                    {t('rooms.creatorBadge')}
+                  </Badge>
+                )}
+                {isAdminMember && !isCreator && (
+                  <Badge size="xs" variant="light" color="indigo">
+                    {t('rooms.adminBadge')}
+                  </Badge>
+                )}
+              </Group>
               {!isSelf && (
                 <>
                   <IconVolume2 size={16} className={styles.volumeIcon} />
@@ -175,6 +270,26 @@ export const RoomCurrentSection = () => {
                     {volumePercent}%
                   </Text>
                 </>
+              )}
+              {canToggleRole && (
+                <Tooltip label={isAdminMember ? t('rooms.removeAdmin') : t('rooms.makeAdmin')} withArrow>
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    color={isAdminMember ? 'red' : 'indigo'}
+                    onClick={() =>
+                      updateMemberRole.mutate({
+                        roomId,
+                        userId: id,
+                        action: isAdminMember ? 'demote' : 'promote',
+                      })
+                    }
+                    disabled={isUpdatingRole}
+                    aria-label={isAdminMember ? t('rooms.removeAdmin') : t('rooms.makeAdmin')}
+                  >
+                    {isAdminMember ? <IconCrownOff size={14} /> : <IconCrown size={14} />}
+                  </ActionIcon>
+                </Tooltip>
               )}
             </Group>
           );

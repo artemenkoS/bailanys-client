@@ -13,13 +13,19 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconCheck, IconMessageCircle, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { IconCheck, IconDoorEnter, IconMessageCircle, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useRoomCallStore } from '../../../stores/roomCallStore';
 import type { Profile } from '../../../types/auth';
 import type { ContactSearchResult } from '../../../types/contacts';
 import { AudioCallButton } from '../../calls/components/AudioCallButton';
+import { useMyRooms } from '../../calls/hooks/useMyRooms';
+import { useCreateRoomInvite } from '../../rooms/hooks/useCreateRoomInvite';
+import { useRoomInviteRequests } from '../../rooms/hooks/useRoomInviteRequests';
+import { useUpdateRoomInvite } from '../../rooms/hooks/useUpdateRoomInvite';
 import { useContactRequests } from '../hooks/useContactRequests';
 import { useContacts } from '../hooks/useContacts';
 import { useContactSearch } from '../hooks/useContactSearch';
@@ -54,9 +60,14 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
   const [debounced] = useDebouncedValue(search, 300);
   const { data: contactsData, isLoading: isContactsLoading, isError: isContactsError } = useContacts();
   const { data: requestsData, isLoading: isRequestsLoading, isError: isRequestsError } = useContactRequests();
+  const { data: roomRequestsData } = useRoomInviteRequests();
   const { data: searchData, isLoading: isSearchLoading, isError: isSearchError } = useContactSearch(debounced);
   const createRequest = useCreateContactRequest();
   const updateRequest = useUpdateContactRequest();
+  const createRoomInvite = useCreateRoomInvite();
+  const updateRoomInvite = useUpdateRoomInvite();
+  const roomId = useRoomCallStore((state) => state.roomId);
+  const { data: myRoomsData } = useMyRooms();
 
   const contacts = useMemo(() => {
     const list = contactsData?.contacts ?? [];
@@ -76,8 +87,50 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
   const searchResults = useMemo(() => searchData?.users ?? [], [searchData?.users]);
   const incomingRequests = requestsData?.incoming ?? [];
   const outgoingRequests = requestsData?.outgoing ?? [];
+  const incomingRoomInvites = roomRequestsData?.incoming ?? [];
+  const outgoingRoomInvites = roomRequestsData?.outgoing ?? [];
+  const myRooms = useMemo(() => myRoomsData?.rooms ?? [], [myRoomsData?.rooms]);
+  const currentMembership = useMemo(() => {
+    if (!roomId) return null;
+    return myRooms.find((room) => room.id === roomId) ?? null;
+  }, [myRooms, roomId]);
+  const canInviteToRoom = Boolean(roomId && currentMembership?.role === 'admin');
+  const hasAnyRequests =
+    incomingRequests.length > 0 ||
+    outgoingRequests.length > 0 ||
+    incomingRoomInvites.length > 0 ||
+    outgoingRoomInvites.length > 0;
+  const isAnyRequestsLoading = isRequestsLoading && !hasAnyRequests;
+  const isAnyRequestsError = isRequestsError && !hasAnyRequests;
+  const showContactRequests = incomingRequests.length > 0 || outgoingRequests.length > 0;
+  const showRoomRequests = incomingRoomInvites.length > 0 || outgoingRoomInvites.length > 0;
 
-  const renderUserRow = (rowKey: string, user: Profile, right: ReactNode, statusOverride?: Profile['status']) => {
+  const handleInviteToRoom = async (user: Profile) => {
+    if (!roomId || !canInviteToRoom) return;
+    try {
+      await createRoomInvite.mutateAsync({ roomId, targetId: user.id });
+      notifications.show({
+        title: t('notifications.success'),
+        message: t('rooms.inviteSent', { name: getDisplayName(user) }),
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Failed to invite to room:', error);
+      notifications.show({
+        title: t('notifications.error'),
+        message: t('rooms.inviteFailed'),
+        color: 'red',
+      });
+    }
+  };
+
+  const renderUserRow = (
+    rowKey: string,
+    user: Profile,
+    right: ReactNode,
+    statusOverride?: Profile['status'],
+    meta?: ReactNode
+  ) => {
     const status = statusOverride ?? user.status;
     const statusKey = statusLabels[status] ?? 'common.online';
     const statusColor = statusColors[status] ?? 'green';
@@ -98,6 +151,7 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
             <Text size="xs" c="dimmed" truncate="end">
               @{user.username}
             </Text>
+            {meta}
           </div>
         </Group>
         {right}
@@ -158,6 +212,19 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
   const renderContactActions = (user: Profile) => {
     return (
       <Group gap={6} wrap="nowrap">
+        {canInviteToRoom && (
+          <Tooltip label={t('rooms.inviteToRoom')} withArrow>
+            <ActionIcon
+              variant="light"
+              color="indigo"
+              size="sm"
+              onClick={() => handleInviteToRoom(user)}
+              disabled={createRoomInvite.isPending}
+            >
+              <IconDoorEnter size={14} />
+            </ActionIcon>
+          </Tooltip>
+        )}
         <Tooltip label={t('chat.open')} withArrow>
           <ActionIcon variant="light" color="indigo" size="sm" onClick={() => onOpenChat(user)}>
             <IconMessageCircle size={14} />
@@ -165,6 +232,68 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
         </Tooltip>
         <AudioCallButton targetId={user.id} status={user.status} size="sm" iconSize={14} onCall={(id) => onStartCall(id, 'audio')} />
       </Group>
+    );
+  };
+
+  const renderRoomInviteMeta = (roomName: string) => (
+    <Text size="xs" c="dimmed" truncate="end">
+      {t('rooms.inviteRoomLabel', { name: roomName })}
+    </Text>
+  );
+
+  const renderRoomInviteRow = (
+    request: { id: string; user: Profile; room: { id: string; name: string } },
+    direction: 'incoming' | 'outgoing'
+  ) => {
+    const actions =
+      direction === 'incoming' ? (
+        <Group gap={6} wrap="nowrap">
+          <Tooltip label={t('contacts.accept')} withArrow>
+            <ActionIcon
+              size="sm"
+              color="green"
+              variant="light"
+              onClick={() => updateRoomInvite.mutate({ requestId: request.id, action: 'accept' })}
+            >
+              <IconCheck size={14} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('contacts.decline')} withArrow>
+            <ActionIcon
+              size="sm"
+              color="red"
+              variant="light"
+              onClick={() => updateRoomInvite.mutate({ requestId: request.id, action: 'decline' })}
+            >
+              <IconX size={14} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      ) : (
+        <Group gap={6} wrap="nowrap">
+          <Badge size="xs" variant="light" color="gray">
+            {t('rooms.invitePending')}
+          </Badge>
+          <Tooltip label={t('contacts.cancelRequest')} withArrow>
+            <ActionIcon
+              size="sm"
+              color="gray"
+              variant="light"
+              onClick={() => updateRoomInvite.mutate({ requestId: request.id, action: 'cancel' })}
+            >
+              <IconX size={14} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      );
+
+    const roomLabel = request.room.name || request.room.id;
+    return renderUserRow(
+      `room-${request.id}`,
+      request.user,
+      actions,
+      request.user.status ?? 'offline',
+      renderRoomInviteMeta(roomLabel)
     );
   };
 
@@ -217,15 +346,15 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
         <Text size="xs" fw={700} tt="uppercase" c="dimmed" className={styles.sectionTitle}>
           {t('contacts.requestsTitle')}
         </Text>
-        {isRequestsLoading ? (
+        {isAnyRequestsLoading ? (
           <Center h={56}>
             <Loader size="sm" />
           </Center>
-        ) : isRequestsError ? (
+        ) : isAnyRequestsError ? (
           <Text size="xs" c="red">
             {t('contacts.connectionError')}
           </Text>
-        ) : incomingRequests.length === 0 && outgoingRequests.length === 0 ? (
+        ) : !hasAnyRequests ? (
           <Text size="xs" c="dimmed">
             {t('contacts.requestsEmpty')}
           </Text>
@@ -280,6 +409,13 @@ export const ContactsSidebar = ({ onStartCall, onOpenChat }: ContactsSidebarProp
                 </Group>
               )
             )}
+            {showRoomRequests && (
+              <Text size="xs" c="dimmed" fw={600} mt={showContactRequests ? 6 : 0}>
+                {t('rooms.invitesTitle')}
+              </Text>
+            )}
+            {incomingRoomInvites.map((request) => renderRoomInviteRow(request, 'incoming'))}
+            {outgoingRoomInvites.map((request) => renderRoomInviteRow(request, 'outgoing'))}
           </Stack>
         )}
       </div>
