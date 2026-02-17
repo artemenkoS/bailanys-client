@@ -164,12 +164,17 @@ export const MyRoomsSection = () => {
           </Group>
         );
 
-        const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url });
+        const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady');
 
         notifications.show({
           title: inviteTitle,
           message: inviteMessage,
           color: copied ? 'green' : 'blue',
+          styles: {
+            closeButton: {
+              alignSelf: 'flex-start',
+            },
+          },
         });
       } catch (err) {
         console.error('Create invite link failed:', err);

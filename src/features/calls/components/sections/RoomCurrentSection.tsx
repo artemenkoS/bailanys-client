@@ -98,12 +98,17 @@ export const RoomCurrentSection = () => {
         </Group>
       );
 
-      const guestMessage = copied ? t('rooms.guestLinkCopied') : t('rooms.guestLinkReady', { url });
+      const guestMessage = copied ? t('rooms.guestLinkCopied') : t('rooms.guestLinkReady');
 
       notifications.show({
         title: guestTitle,
         message: guestMessage,
         color: copied ? 'green' : 'blue',
+        styles: {
+          closeButton: {
+            alignSelf: 'flex-start',
+          },
+        },
       });
     } catch (error) {
       console.error('Failed to create guest link:', error);
@@ -161,12 +166,17 @@ export const RoomCurrentSection = () => {
         </Group>
       );
 
-      const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url });
+      const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady');
 
       notifications.show({
         title: inviteTitle,
         message: inviteMessage,
         color: copied ? 'green' : 'blue',
+        styles: {
+          closeButton: {
+            alignSelf: 'flex-start',
+          },
+        },
       });
     } catch (error) {
       console.error('Failed to create invite link:', error);
