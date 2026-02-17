@@ -1,7 +1,6 @@
-import { ActionIcon, Group, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconCopy } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +21,7 @@ import { useRemoveRoomAvatar } from '../../hooks/useRemoveRoomAvatar';
 import { useRoomJoinHandler } from '../../hooks/useRoomJoinHandler';
 import { useUpdateRoomAvatar } from '../../hooks/useUpdateRoomAvatar';
 import { RoomDeleteConfirmModal } from '../modals/RoomDeleteConfirmModal';
+import { NotificationCopyButton } from '../shared/NotificationCopyButton';
 import { RoomsListSection } from './RoomsListSection';
 
 export const MyRoomsSection = () => {
@@ -153,24 +153,21 @@ export const MyRoomsSection = () => {
           }
         };
 
-        const inviteMessage = copied ? (
-          t('rooms.inviteLinkCopied')
+        const inviteTitle = copied ? (
+          t('notifications.success')
         ) : (
-          <Group gap="xs" align="center" wrap="wrap">
-            <Text size="sm">{t('rooms.inviteLinkReady', { url })}</Text>
-            <ActionIcon
-              variant="subtle"
-              size="sm"
-              onClick={() => void copyInviteLink()}
-              aria-label={t('rooms.inviteLinkCopy')}
-            >
-              <IconCopy size={14} />
-            </ActionIcon>
+          <Group align="center" gap="xs" justify="space-between" style={{ width: '100%' }} wrap="nowrap">
+            <Text size="sm" fw={600}>
+              {t('notifications.success')}
+            </Text>
+            <NotificationCopyButton onClick={copyInviteLink} ariaLabel={t('rooms.inviteLinkCopy')} />
           </Group>
         );
 
+        const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url });
+
         notifications.show({
-          title: t('notifications.success'),
+          title: inviteTitle,
           message: inviteMessage,
           color: copied ? 'green' : 'blue',
         });

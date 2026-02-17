@@ -1,7 +1,6 @@
 import { ActionIcon, Avatar, Badge, Button, Group, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
-  IconCopy,
   IconCrown,
   IconCrownOff,
   IconDoorExit,
@@ -22,6 +21,7 @@ import { useUpdateRoomMemberRole } from '../../../rooms/hooks/useUpdateRoomMembe
 import { useMyRooms } from '../../hooks/useMyRooms';
 import { useRooms } from '../../hooks/useRooms';
 import { MuteMicButton } from '../shared/MuteMicButton';
+import { NotificationCopyButton } from '../shared/NotificationCopyButton';
 import { RoomChatButton } from '../shared/RoomChatButton';
 import styles from './RoomCurrentSection.module.css';
 
@@ -73,9 +73,36 @@ export const RoomCurrentSection = () => {
         }
       }
 
+      const copyGuestLink = async () => {
+        if (!navigator.clipboard?.writeText) return;
+        try {
+          await navigator.clipboard.writeText(url);
+          notifications.show({
+            title: t('notifications.success'),
+            message: t('rooms.guestLinkCopied'),
+            color: 'green',
+          });
+        } catch {
+          // Ignore clipboard errors, user can copy manually.
+        }
+      };
+
+      const guestTitle = copied ? (
+        t('notifications.success')
+      ) : (
+        <Group align="center" gap="xs" justify="space-between" style={{ width: '100%' }} wrap="nowrap">
+          <Text size="sm" fw={600}>
+            {t('notifications.success')}
+          </Text>
+          <NotificationCopyButton onClick={copyGuestLink} ariaLabel={t('rooms.guestLinkCopy')} />
+        </Group>
+      );
+
+      const guestMessage = copied ? t('rooms.guestLinkCopied') : t('rooms.guestLinkReady', { url });
+
       notifications.show({
-        title: t('notifications.success'),
-        message: copied ? t('rooms.guestLinkCopied') : t('rooms.guestLinkReady', { url }),
+        title: guestTitle,
+        message: guestMessage,
         color: copied ? 'green' : 'blue',
       });
     } catch (error) {
@@ -123,24 +150,21 @@ export const RoomCurrentSection = () => {
         }
       };
 
-      const inviteMessage = copied ? (
-        t('rooms.inviteLinkCopied')
+      const inviteTitle = copied ? (
+        t('notifications.success')
       ) : (
-        <Group gap="xs" align="center" wrap="wrap">
-          <Text size="sm">{t('rooms.inviteLinkReady', { url })}</Text>
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            onClick={() => void copyInviteLink()}
-            aria-label={t('rooms.inviteLinkCopy')}
-          >
-            <IconCopy size={14} />
-          </ActionIcon>
+        <Group align="center" gap="xs" justify="space-between" style={{ width: '100%' }} wrap="nowrap">
+          <Text size="sm" fw={600}>
+            {t('notifications.success')}
+          </Text>
+          <NotificationCopyButton onClick={copyInviteLink} ariaLabel={t('rooms.inviteLinkCopy')} />
         </Group>
       );
 
+      const inviteMessage = copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url });
+
       notifications.show({
-        title: t('notifications.success'),
+        title: inviteTitle,
         message: inviteMessage,
         color: copied ? 'green' : 'blue',
       });
