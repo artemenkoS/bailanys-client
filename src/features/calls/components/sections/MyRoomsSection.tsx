@@ -1,6 +1,7 @@
-import { Text } from '@mantine/core';
+import { ActionIcon, Group, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import { IconCopy } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -138,9 +139,39 @@ export const MyRoomsSection = () => {
           }
         }
 
+        const copyInviteLink = async () => {
+          if (!navigator.clipboard?.writeText) return;
+          try {
+            await navigator.clipboard.writeText(url);
+            notifications.show({
+              title: t('notifications.success'),
+              message: t('rooms.inviteLinkCopied'),
+              color: 'green',
+            });
+          } catch {
+            // Ignore clipboard errors, user can copy manually.
+          }
+        };
+
+        const inviteMessage = copied ? (
+          t('rooms.inviteLinkCopied')
+        ) : (
+          <Group gap="xs" align="center" wrap="wrap">
+            <Text size="sm">{t('rooms.inviteLinkReady', { url })}</Text>
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              onClick={() => void copyInviteLink()}
+              aria-label={t('rooms.inviteLinkCopy')}
+            >
+              <IconCopy size={14} />
+            </ActionIcon>
+          </Group>
+        );
+
         notifications.show({
           title: t('notifications.success'),
-          message: copied ? t('rooms.inviteLinkCopied') : t('rooms.inviteLinkReady', { url }),
+          message: inviteMessage,
           color: copied ? 'green' : 'blue',
         });
       } catch (err) {
